@@ -147,7 +147,7 @@ def main():
                 with cols[k_empty]: st.container(height=50) 
 
         st.markdown("---")
-        if st.button("👁️ Analyze Uploaded Image(s)", disabled=st.session_state.is_analyzing_images, type="primary", use_container_width=True):
+        if st.button("Analyze Uploaded Image(s)", disabled=st.session_state.is_analyzing_images, type="primary", use_container_width=True):
             if not st.session_state.uploaded_files_info:
                 st.warning("Please upload images before analyzing.")
             else:
