@@ -3,7 +3,8 @@ import streamlit as st
 import datetime
 import io 
 import re 
-from streamlit.components.v1 import html # For the copy to clipboard functionality
+from streamlit.components.v1 import html as st_html_component # Renamed for clarity
+import html as html_escaper # For robust HTML escaping
 
 # Local imports
 from config import VISION_MODEL, TEXT_MODEL 
@@ -37,17 +38,6 @@ def remove_file_at_index(index_to_remove):
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
 
-# --- Callback function to update batch selection state ---
-def update_batch_selection(item_id, index):
-    # This function is called on_change of the checkbox
-    # The actual update of data_item['batch_selected'] happens due to widget's value binding
-    # This callback is more for if you needed to do something immediately after selection,
-    # but for simple state update, direct binding is enough.
-    # For now, we can just ensure the state is correctly reflected.
-    # st.session_state.analyzed_image_data_set[index]['batch_selected'] will be updated by Streamlit
-    pass
-
-
 # --- Streamlit App State Initialization ---
 def initialize_session_state():
     default_store_key = None
@@ -55,13 +45,13 @@ def initialize_session_state():
         default_store_key = list(INITIAL_BASE_CAPTIONS.keys())[0]
 
     defaults = {
-        'analyzed_image_data_set': [], # Each item will now have a 'batch_selected' key
+        'analyzed_image_data_set': [], 
         'global_selected_store_key': default_store_key, 
         'global_selected_tone': TONE_OPTIONS[0]['value'] if TONE_OPTIONS else None,
         'uploaded_files_info': [],
         'error_message': "",
         'is_analyzing_images': False,
-        'is_batch_generating_captions': False, # For batch generation spinner
+        'is_batch_generating_captions': False, 
         'info_message_after_action': "" 
     }
     for key, value in defaults.items():
@@ -110,7 +100,7 @@ def main():
              st.session_state.global_selected_tone = selected_tone_val
     
     st.sidebar.markdown("---")
-    st.sidebar.caption(f"Caption Gen v3.4 // {datetime.date.today().strftime('%Y-%m-%d')}")
+    st.sidebar.caption(f"Caption Gen v3.4.1 // {datetime.date.today().strftime('%Y-%m-%d')}") # Version bump for fix
 
 
     # --- File Uploader ---
@@ -130,7 +120,7 @@ def main():
         
         if new_files_info:
             st.session_state.uploaded_files_info.extend(new_files_info)
-            st.session_state.analyzed_image_data_set = [] # Clear analysis if new files are added
+            st.session_state.analyzed_image_data_set = [] 
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
             st.session_state.info_message_after_action = f"{len(new_files_info)} new image(s) added. Previous analysis results cleared. Click 'Analyze' to process all images."
@@ -188,7 +178,6 @@ def main():
                 progress_text = f"Analyzing {file_info['name']} ({idx+1}/{total_files})..."
                 progress_bar.progress((idx + 1) / total_files, text=progress_text)
                 
-                # Initialize with 'batch_selected': False
                 analysis_data_item = {
                     "id": f"image-{file_info['name']}-{idx}", 
                     "original_filename": file_info['name'],
@@ -200,7 +189,7 @@ def main():
                     "dateRange": {"start": datetime.date.today().strftime("%Y-%m-%d"), 
                                   "end": (datetime.date.today() + datetime.timedelta(days=6)).strftime("%Y-%m-%d")},
                     "generatedCaption": "", "analysisError": "",
-                    "batch_selected": False # New field for batch selection
+                    "batch_selected": False 
                 }
                 try:
                     analysis_text = analyze_image_with_gemini(VISION_MODEL, file_info['bytes'], image_analysis_prompt_template)
@@ -307,7 +296,6 @@ def main():
     # --- Batch Caption Generation Button ---
     if st.session_state.analyzed_image_data_set and not st.session_state.is_analyzing_images:
         st.markdown("---")
-        # Check if any items are selected for batch generation
         items_selected_for_batch = any(item.get('batch_selected', False) for item in st.session_state.analyzed_image_data_set)
         
         if st.button("✍️ Generate Captions for Selected Items", 
@@ -317,13 +305,10 @@ def main():
             st.session_state.is_batch_generating_captions = True
             generated_count = 0
             with st.spinner("Generating captions for selected items..."):
-                for index, data_item in enumerate(st.session_state.analyzed_image_data_set):
-                    if data_item.get('batch_selected', False):
-                        # --- Re-use single caption generation logic ---
-                        # This is a simplified version; you might need to adapt error handling or specific states
-                        # Ensure data_item is the actual mutable object from session_state list
+                for index, data_item_loop_var in enumerate(st.session_state.analyzed_image_data_set): # Use a different loop variable
+                    if data_item_loop_var.get('batch_selected', False):
                         current_data_item_ref = st.session_state.analyzed_image_data_set[index]
-                        current_data_item_ref['generatedCaption'] = "" # Clear before generating
+                        current_data_item_ref['generatedCaption'] = "" 
                         
                         store_details_key = current_data_item_ref['selectedStoreKey']
                         store_info_set = INITIAL_BASE_CAPTIONS.get(store_details_key)
@@ -360,7 +345,6 @@ def main():
                                 if not current_error:
                                     holiday_ctx = get_holiday_context(current_data_item_ref['dateRange']['start'], current_data_item_ref['dateRange']['end'])
                                     prompt_list = [
-                                        # ... (same prompt list as in single generation) ...
                                         f"Generate a social media caption for a grocery store promotion.",
                                         f"Store & Sale Type: {caption_structure['name']}",
                                         f"Product on Sale: {current_data_item_ref['itemProduct']}", f"Price: {final_price}",
@@ -406,24 +390,19 @@ def main():
 
     # --- Display Analyzed Data & Generate Captions ---
     if st.session_state.analyzed_image_data_set:
-        if not st.session_state.is_batch_generating_captions: # Don't display if batch is running
+        if not st.session_state.is_batch_generating_captions: 
             st.markdown("---")
             st.header("📄 Image Details & Caption Generation")
         
         for index, data_item_proxy in enumerate(st.session_state.analyzed_image_data_set):
             item_key_prefix = f"item_{data_item_proxy['id']}"
-            # Ensure we are modifying the actual item in the session state list
             data_item = st.session_state.analyzed_image_data_set[index] 
 
             with st.container(border=True):
-                # --- Checkbox for batch selection ---
-                # The value is directly bound to the data_item dictionary
                 data_item['batch_selected'] = st.checkbox(
                     "Select for Batch Generation", 
                     value=data_item.get('batch_selected', False), 
                     key=f"{item_key_prefix}_batch_select"
-                    # on_change=update_batch_selection, # Not strictly needed if direct binding works
-                    # args=(data_item['id'], index)
                 )
                 
                 st.markdown(f"##### Image: **{data_item.get('original_filename', data_item['id'])}**")
@@ -491,13 +470,12 @@ def main():
                         new_e_dt = st.date_input("End Date", value=e_dt_val, key=f"{item_key_prefix}_edate", min_value=current_start_date_for_end_picker)
                         if new_e_dt.strftime("%Y-%m-%d") != data_item['dateRange']['end']: data_item['dateRange']['end'] = new_e_dt.strftime("%Y-%m-%d"); st.rerun()
                 
-                # --- Single Caption Generation Button ---
                 caption_loading_key = f"{item_key_prefix}_caption_loading"
                 if caption_loading_key not in st.session_state: st.session_state[caption_loading_key] = False
 
                 if st.button(f"✍️ Generate Caption for this Item", key=f"{item_key_prefix}_gen_btn", disabled=st.session_state[caption_loading_key] or st.session_state.is_batch_generating_captions, type="secondary", use_container_width=True):
                     st.session_state[caption_loading_key] = True
-                    data_item['generatedCaption'] = "" # Clear before generating
+                    data_item['generatedCaption'] = "" 
                     
                     store_details_key = data_item['selectedStoreKey']
                     store_info_set = INITIAL_BASE_CAPTIONS.get(store_details_key) 
@@ -532,7 +510,6 @@ def main():
                             if not current_error: 
                                 holiday_ctx = get_holiday_context(data_item['dateRange']['start'], data_item['dateRange']['end'])
                                 prompt_list = [
-                                    # ... (same prompt list as before) ...
                                     f"Generate a social media caption for a grocery store promotion.",
                                     f"Store & Sale Type: {caption_structure['name']}",
                                     f"Product on Sale: {data_item['itemProduct']}", f"Price: {final_price}",
@@ -574,18 +551,16 @@ def main():
 
                 if data_item.get('generatedCaption'):
                     caption_text_to_display = data_item['generatedCaption']
-                    # Display area for the caption
                     st.text_area("📝 Generated Caption:", value=caption_text_to_display, height=200, key=f"{item_key_prefix}_capt_out_display", help="Review and manually copy the text below if needed.")
                     
-                    # --- Copy to Clipboard Button using st.components.v1.html ---
-                    # Create a unique ID for the hidden textarea and feedback span for this specific caption
                     text_area_id = f"copytext_{item_key_prefix}"
                     feedback_span_id = f"copyfeedback_{item_key_prefix}"
+                    
+                    # Use html_escaper.escape for the caption text
+                    escaped_caption_for_html = html_escaper.escape(caption_text_to_display)
 
-                    # HTML and JS for the copy button and hidden textarea
-                    # The textarea is hidden but its content is selected and copied.
                     copy_button_html_content = f"""
-                        <textarea id="{text_area_id}" style="opacity:0.01; height:1px; width:1px; position:absolute; z-index: -1; pointer-events:none;" readonly>{caption_text_to_display.replace("'", "&apos;").replace('"',"&quot;")}</textarea>
+                        <textarea id="{text_area_id}" style="opacity:0.01; height:1px; width:1px; position:absolute; z-index: -1; pointer-events:none;" readonly>{escaped_caption_for_html}</textarea>
                         <button 
                             onclick="copyToClipboard('{text_area_id}', '{feedback_span_id}')" 
                             style="padding: 0.25rem 0.75rem; margin-top: 5px; border-radius: 0.25rem; border: 1px solid #ccc; background-color: #f0f2f6; cursor:pointer;"
@@ -595,30 +570,24 @@ def main():
                         <span id="{feedback_span_id}" style="margin-left: 10px; font-size: 0.9em;"></span>
 
                         <script>
-                        // Ensure this script is defined only once or is idempotent
                         if (typeof window.copyToClipboard !== 'function') {{
                             window.copyToClipboard = function(elementId, feedbackId) {{
                                 var copyText = document.getElementById(elementId);
                                 var feedbackSpan = document.getElementById(feedbackId);
-                                
                                 if (!copyText || !feedbackSpan) {{
-                                    console.error("Copy elements not found:", elementId, feedbackId);
                                     if(feedbackSpan) feedbackSpan.innerText = "Error: Elements missing.";
                                     return;
                                 }}
-                                
-                                copyText.style.display = 'block'; // Make it temporarily visible for selection
+                                copyText.style.display = 'block'; 
                                 copyText.select();
-                                copyText.setSelectionRange(0, 99999); // For mobile devices
-                                copyText.style.display = 'none'; // Hide it again
-                                
+                                copyText.setSelectionRange(0, 99999); 
+                                copyText.style.display = 'none'; 
                                 var msg = "";
                                 try {{
                                     var successful = document.execCommand('copy');
                                     msg = successful ? 'Copied to clipboard!' : 'Copy failed.';
                                 }} catch (err) {{
                                     msg = 'Oops, unable to copy via script.';
-                                    console.error('Copy command failed:', err);
                                 }}
                                 feedbackSpan.innerText = msg;
                                 setTimeout(function(){{ feedbackSpan.innerText = ''; }}, 2500);
@@ -626,7 +595,7 @@ def main():
                         }}
                         </script>
                     """
-                    html(copy_button_html_content, height=45) # Adjust height to fit button and potential message
+                    st_html_component(copy_button_html_content, height=45) 
 
             st.markdown("---") 
     else:
