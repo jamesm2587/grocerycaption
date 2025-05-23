@@ -24,12 +24,14 @@ def remove_file_at_index(index_to_remove):
         removed_file_name = st.session_state.uploaded_files_info[index_to_remove]['name']
         st.session_state.uploaded_files_info.pop(index_to_remove)
         
-        # Clear analysis results as they are now out of sync
+        # Clear analysis results and continuity references as they are now out of sync
         if 'analyzed_image_data_set' in st.session_state and st.session_state.analyzed_image_data_set:
             st.session_state.analyzed_image_data_set = []
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
-            st.session_state.info_message_after_action = f"Image '{removed_file_name}' removed. Previous analysis results cleared. Please re-analyze remaining images."
+            # Reset last caption references
+            st.session_state.last_caption_by_store = {}
+            st.session_state.info_message_after_action = f"Image '{removed_file_name}' removed. Previous analysis and continuity references cleared. Please re-analyze remaining images."
         else:
             st.session_state.info_message_after_action = f"Image '{removed_file_name}' removed."
             
@@ -37,6 +39,8 @@ def remove_file_at_index(index_to_remove):
             st.session_state.analyzed_image_data_set = []
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
+            st.session_state.last_caption_by_store = {}
+
 
 # --- Streamlit App State Initialization ---
 def initialize_session_state():
@@ -52,7 +56,8 @@ def initialize_session_state():
         'error_message': "",
         'is_analyzing_images': False,
         'is_batch_generating_captions': False, 
-        'info_message_after_action': "" 
+        'info_message_after_action': "",
+        'last_caption_by_store': {} # To store the first generated caption for each store as a style reference
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -100,7 +105,7 @@ def main():
              st.session_state.global_selected_tone = selected_tone_val
     
     st.sidebar.markdown("---")
-    st.sidebar.caption(f"Caption Gen v3.4.1 // {datetime.date.today().strftime('%Y-%m-%d')}") # Version bump for fix
+    st.sidebar.caption(f"Caption Gen v3.5.0 // {datetime.date.today().strftime('%Y-%m-%d')}") # Version bump for continuity feature
 
 
     # --- File Uploader ---
@@ -123,7 +128,8 @@ def main():
             st.session_state.analyzed_image_data_set = [] 
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
-            st.session_state.info_message_after_action = f"{len(new_files_info)} new image(s) added. Previous analysis results cleared. Click 'Analyze' to process all images."
+            st.session_state.last_caption_by_store = {} # Reset continuity reference
+            st.session_state.info_message_after_action = f"{len(new_files_info)} new image(s) added. Previous analysis and continuity references cleared. Click 'Analyze' to process all images."
             st.rerun()
 
     if st.session_state.uploaded_files_info:
@@ -154,6 +160,7 @@ def main():
                 st.session_state.is_analyzing_images = True
                 st.session_state.analyzed_image_data_set = [] 
                 st.session_state.error_message = ""
+                st.session_state.last_caption_by_store = {} # Reset continuity reference
                 if 'analyzed_image_data_set_source_length' in st.session_state:
                     del st.session_state.analyzed_image_data_set_source_length
                 st.rerun() 
@@ -304,13 +311,25 @@ def main():
                       disabled=st.session_state.is_batch_generating_captions or not items_selected_for_batch):
             st.session_state.is_batch_generating_captions = True
             generated_count = 0
+            
+            # Group selected items by store for continuity
+            items_to_process_by_store = {}
+            for index, data_item_loop_var in enumerate(st.session_state.analyzed_image_data_set):
+                if data_item_loop_var.get('batch_selected', False):
+                    store_key = data_item_loop_var['selectedStoreKey']
+                    if store_key not in items_to_process_by_store:
+                        items_to_process_by_store[store_key] = []
+                    items_to_process_by_store[store_key].append(index) # Store index
+
             with st.spinner("Generating captions for selected items..."):
-                for index, data_item_loop_var in enumerate(st.session_state.analyzed_image_data_set): # Use a different loop variable
-                    if data_item_loop_var.get('batch_selected', False):
-                        current_data_item_ref = st.session_state.analyzed_image_data_set[index]
+                for store_key_for_batch, item_indices in items_to_process_by_store.items():
+                    reference_caption_for_current_store_batch = st.session_state.last_caption_by_store.get(store_key_for_batch)
+
+                    for index_in_session_state in item_indices:
+                        current_data_item_ref = st.session_state.analyzed_image_data_set[index_in_session_state]
                         current_data_item_ref['generatedCaption'] = "" 
                         
-                        store_details_key = current_data_item_ref['selectedStoreKey']
+                        store_details_key = current_data_item_ref['selectedStoreKey'] # Should match store_key_for_batch
                         store_info_set = INITIAL_BASE_CAPTIONS.get(store_details_key)
                         current_error = ""
 
@@ -358,8 +377,14 @@ def main():
                                     ])
                                     if holiday_ctx and st.session_state.global_selected_tone == "Seasonal / Festive":
                                         prompt_list.append(f"Strongly emphasize the {holiday_ctx} theme and use relevant emojis.")
+                                    
+                                    # Continuity instruction
+                                    if reference_caption_for_current_store_batch:
+                                        prompt_list.append(f"\nIMPORTANT STYLISTIC NOTE: For consistency with other posts for this store, please try to follow a similar structure, tone, and overall style to the following reference caption. Adapt product details, price, and specific emojis for the current item, but keep the general formatting and sentence flow consistent with the reference.")
+                                        prompt_list.append(f"REFERENCE CAPTION START:\n{reference_caption_for_current_store_batch}\nREFERENCE CAPTION END\nEnsure your new caption is unique and accurate for the current product.")
+                                    
                                     prompt_list.extend([
-                                        f"\nReference Style (from original example - adapt, don't copy verbatim):\n\"{caption_structure['original_example']}\"",
+                                        f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"",
                                         "\nCaption Requirements:",
                                         "- The caption must be unique, engaging, and ready for social media.",
                                         "- Clearly include the product name, its price, the sale dates (as per 'display_dates'), and the store location.",
@@ -376,6 +401,13 @@ def main():
                                         generated_text = generate_caption_with_gemini(TEXT_MODEL, final_prompt_for_caption)
                                         current_data_item_ref['generatedCaption'] = generated_text
                                         generated_count +=1
+                                        # Update/set the reference caption for this store if it's the first one in this batch for this store
+                                        if not reference_caption_for_current_store_batch:
+                                            reference_caption_for_current_store_batch = generated_text
+                                            st.session_state.last_caption_by_store[store_key_for_batch] = generated_text
+                                        elif store_key_for_batch not in st.session_state.last_caption_by_store: # Also save if it's the first overall for this store in the session
+                                             st.session_state.last_caption_by_store[store_key_for_batch] = generated_text
+
                                     except Exception as e: current_error += f"Caption API error: {str(e)}"
                         
                         current_data_item_ref['analysisError'] = (current_data_item_ref.get('analysisError', "").strip() + " " + current_error.strip()).strip()
@@ -523,8 +555,15 @@ def main():
                                 ])
                                 if holiday_ctx and st.session_state.global_selected_tone == "Seasonal / Festive":
                                     prompt_list.append(f"Strongly emphasize the {holiday_ctx} theme and use relevant emojis.")
+
+                                # Continuity instruction for single item generation
+                                reference_caption_for_store = st.session_state.last_caption_by_store.get(store_details_key)
+                                if reference_caption_for_store:
+                                    prompt_list.append(f"\nIMPORTANT STYLISTIC NOTE: For consistency with other posts for this store, please try to follow a similar structure, tone, and overall style to the following reference caption. Adapt product details, price, and specific emojis for the current item, but keep the general formatting and sentence flow consistent with the reference.")
+                                    prompt_list.append(f"REFERENCE CAPTION START:\n{reference_caption_for_store}\nREFERENCE CAPTION END\nEnsure your new caption is unique and accurate for the current product.")
+
                                 prompt_list.extend([
-                                    f"\nReference Style (from original example - adapt, don't copy verbatim):\n\"{caption_structure['original_example']}\"",
+                                    f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"",
                                     "\nCaption Requirements:",
                                     "- The caption must be unique, engaging, and ready for social media.",
                                     "- Clearly include the product name, its price, the sale dates (as per 'display_dates'), and the store location.",
@@ -540,6 +579,9 @@ def main():
                                 try:
                                     generated_text = generate_caption_with_gemini(TEXT_MODEL, final_prompt_for_caption)
                                     data_item['generatedCaption'] = generated_text
+                                    # Store this caption as the reference if it's the first one for this store in this session
+                                    if store_details_key not in st.session_state.last_caption_by_store:
+                                        st.session_state.last_caption_by_store[store_details_key] = generated_text
                                 except Exception as e: current_error += f"Caption API error: {str(e)}"
                     
                     data_item['analysisError'] = (data_item.get('analysisError', "").strip() + " " + current_error.strip()).strip()
@@ -556,7 +598,6 @@ def main():
                     text_area_id = f"copytext_{item_key_prefix}"
                     feedback_span_id = f"copyfeedback_{item_key_prefix}"
                     
-                    # Use html_escaper.escape for the caption text
                     escaped_caption_for_html = html_escaper.escape(caption_text_to_display)
 
                     copy_button_html_content = f"""
