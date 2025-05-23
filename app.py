@@ -442,7 +442,7 @@ def main():
     if st.session_state.analyzed_image_data_set:
         if not st.session_state.is_batch_generating_captions: 
             st.markdown("---")
-            st.header("📄 Image Details & Caption Generation")
+            st.header("Image Details & Caption Generation")
         
         for index, data_item_proxy in enumerate(st.session_state.analyzed_image_data_set):
             item_key_prefix = f"item_{data_item_proxy['id']}"
