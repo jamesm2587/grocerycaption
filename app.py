@@ -13,8 +13,8 @@ from utils import (
     get_current_day_for_teds, get_holiday_context, format_dates_for_caption_context,
     get_final_price_string, find_store_key_by_name, try_parse_date_from_image_text
 )
-# Import the new prompt template and updated extract_field if you move it there
-from gemini_services import analyze_image_with_gemini, generate_caption_with_gemini, extract_field, IMAGE_ANALYSIS_PROMPT_TEMPLATE_V2
+# Import the new prompt template
+from gemini_services import analyze_image_with_gemini, generate_caption_with_gemini, extract_field, IMAGE_ANALYSIS_PROMPT_TEMPLATE_V3
 
 
 # --- Callback function for removing an uploaded file ---
@@ -103,7 +103,7 @@ def main():
              st.session_state.global_selected_tone = selected_tone_val
     
     st.sidebar.markdown("---")
-    st.sidebar.caption(f"Caption Gen v3.6.0 // {datetime.date.today().strftime('%Y-%m-%d')}") # Version bump
+    st.sidebar.caption(f"Caption Gen v3.7.0 // {datetime.date.today().strftime('%Y-%m-%d')}") # Version bump for attributes
 
 
     uploaded_file_objects = st.file_uploader(
@@ -163,13 +163,12 @@ def main():
                 st.rerun() 
     
     if st.session_state.is_analyzing_images and st.session_state.uploaded_files_info:
-        with st.spinner("Analyzing images with enhanced detail extraction... This may take a few moments."):
+        with st.spinner("Analyzing images for even more details... This may take a few moments."):
             progress_bar = st.progress(0)
             total_files = len(st.session_state.uploaded_files_info)
             temp_analysis_results = []
             
-            # Use the updated prompt template
-            current_image_analysis_prompt = IMAGE_ANALYSIS_PROMPT_TEMPLATE_V2 
+            current_image_analysis_prompt = IMAGE_ANALYSIS_PROMPT_TEMPLATE_V3
 
             for idx, file_info in enumerate(st.session_state.uploaded_files_info):
                 progress_text = f"Analyzing {file_info['name']} ({idx+1}/{total_files})..."
@@ -180,8 +179,9 @@ def main():
                     "original_filename": file_info['name'],
                     "image_bytes_for_preview": file_info['bytes'],
                     "itemProduct": "", 
-                    "itemCategory": "N/A", # New field
-                    "detectedBrands": "N/A", # New field
+                    "itemCategory": "N/A", 
+                    "detectedBrands": "N/A", 
+                    "specialAttributes": "N/A", # New field
                     "selectedStoreKey": st.session_state.global_selected_store_key, 
                     "selectedPriceFormat": PREDEFINED_PRICES[1]['value'] if PREDEFINED_PRICES and len(PREDEFINED_PRICES) > 1 else (PREDEFINED_PRICES[0]['value'] if PREDEFINED_PRICES else "CUSTOM"),
                     "itemPriceValue": "", "customItemPrice": "",
@@ -195,9 +195,10 @@ def main():
                     analysis_data_item['itemProduct'] = extract_field(r"^Product Name: (.*)$", analysis_text, default="Unknown Product")
                     analysis_data_item['itemCategory'] = extract_field(r"^Product Category: (.*)$", analysis_text, default="General Grocery")
                     analysis_data_item['detectedBrands'] = extract_field(r"^Detected Brands/Logos: (.*)$", analysis_text, default="N/A")
+                    analysis_data_item['specialAttributes'] = extract_field(r"^Special Attributes: (.*)$", analysis_text, default="N/A")
                     
                     extracted_price_str = extract_field(r"^Price: (.*)$", analysis_text)
-                    if extracted_price_str:
+                    if extracted_price_str: # Process only if price string is found
                         found_format = False
                         for p_format in PREDEFINED_PRICES:
                             if p_format['value'] == "CUSTOM": continue
@@ -221,27 +222,26 @@ def main():
                                     price_val_match = re.search(r"([\d\.]+)", extracted_price_str)
                                     if price_val_match:
                                         analysis_data_item['itemPriceValue'] = price_val_match.group(1)
-                                    else: # If value cannot be extracted despite format match, fallback
+                                    else:
                                         analysis_data_item['selectedPriceFormat'] = "CUSTOM"
                                         analysis_data_item['customItemPrice'] = extracted_price_str
                                 found_format = True
                                 break
-                        if not found_format: # If no predefined format matches
+                        if not found_format:
                             analysis_data_item['selectedPriceFormat'] = "CUSTOM"
                             analysis_data_item['customItemPrice'] = extracted_price_str
-                    else: # If price string itself is not found
-                        analysis_data_item['selectedPriceFormat'] = "CUSTOM"
-                        analysis_data_item['customItemPrice'] = "N/A"
-
+                    else: # Price string not found
+                        analysis_data_item['selectedPriceFormat'] = "CUSTOM" 
+                        analysis_data_item['customItemPrice'] = "N/A" # Indicate price was not found
 
                     detected_store_name = extract_field(r"^Store Name: (.*)$", analysis_text)
-                    if detected_store_name and detected_store_name != "N/A":
+                    if detected_store_name and detected_store_name.lower() != "n/a" and detected_store_name.lower() != "not found":
                         matched_key = find_store_key_by_name(detected_store_name, INITIAL_BASE_CAPTIONS) 
                         if matched_key: analysis_data_item['selectedStoreKey'] = matched_key
                         else: analysis_data_item['analysisError'] += f"Store '{detected_store_name}' not in predefined list. Defaulting. "
                     
                     dates_str = extract_field(r"^Sale Dates: (.*)$", analysis_text)
-                    if dates_str and dates_str != "N/A":
+                    if dates_str and dates_str.lower() != "n/a" and dates_str.lower() != "not found":
                         date_parts = re.split(r'\s+to\s+|\s*-\s*|\s*–\s*', dates_str) 
                         parsed_start, parsed_end = None, None
                         if len(date_parts) >= 1:
@@ -276,16 +276,16 @@ def main():
                             if s_dt > e_dt: 
                                 analysis_data_item['dateRange']['start'], analysis_data_item['dateRange']['end'] = e_dt_str, s_dt_str
                                 analysis_data_item['analysisError'] += "Start/End dates reordered. "
-                            if parsed_start and not parsed_end: #Only start date found
-                                analysis_data_item['dateRange']['end'] = (s_dt + datetime.timedelta(days=1)).strftime("%Y-%m-%d") # Default end date to start_date + 1 day
+                            if parsed_start and not parsed_end: 
+                                analysis_data_item['dateRange']['end'] = (s_dt + datetime.timedelta(days=1)).strftime("%Y-%m-%d") 
                                 analysis_data_item['analysisError'] += "End date inferred as Start Date + 1 day. Review. "
-                            elif not parsed_start and parsed_end: # Only end date found
+                            elif not parsed_start and parsed_end: 
                                  analysis_data_item['analysisError'] += "Start date not found. Using default. Review. "
                         except ValueError: 
                             analysis_data_item['analysisError'] += "Date parsing error. Using default dates. "
                             analysis_data_item['dateRange']['start'] = datetime.date.today().strftime("%Y-%m-%d")
                             analysis_data_item['dateRange']['end'] = (datetime.date.today() + datetime.timedelta(days=6)).strftime("%Y-%m-%d")
-                    else: # Dates string not found
+                    else: 
                         analysis_data_item['analysisError'] += "Sale dates not found in image. Using default dates. "
 
                 except Exception as e:
@@ -348,7 +348,7 @@ def main():
                                 final_price = get_final_price_string(current_data_item_ref['selectedPriceFormat'], current_data_item_ref['itemPriceValue'], current_data_item_ref['customItemPrice'])
                                 if not current_data_item_ref.get('itemProduct', '').strip() or current_data_item_ref.get('itemProduct') == "Unknown Product":
                                     current_error += "Product name missing or unknown. "
-                                if not final_price or "[Price Value]" in final_price or "[Custom Price]" in final_price or "[X for $Y Price]" in final_price or "N/A" in final_price:
+                                if not final_price or "[Price Value]" in final_price or "[Custom Price]" in final_price or "[X for $Y Price]" in final_price or "N/A" in final_price: # Check for "N/A" from price
                                     current_error += "Invalid or missing price. "
                                 
                                 display_dates = format_dates_for_caption_context(
@@ -369,12 +369,21 @@ def main():
                                     detected_brands = current_data_item_ref.get('detectedBrands', 'N/A')
                                     if detected_brands.lower() not in ['n/a', 'not found', '']:
                                         product_display_text += f" (featuring {detected_brands})"
+                                    
+                                    special_attributes = current_data_item_ref.get('specialAttributes', "N/A")
+                                    if special_attributes.lower() not in ['n/a', 'not found', '']:
+                                         product_display_text += f" ({special_attributes})" # Append attributes to product display
+
                                     prompt_list.append(f"Product on Sale: {product_display_text}")
                                     prompt_list.append(f"Price: {final_price}")
                                     
                                     prompt_list.append(f"Sale Dates (for display in caption): {display_dates}. (The actual sale period is from {current_data_item_ref['dateRange']['start']} to {current_data_item_ref['dateRange']['end']}).")
 
                                     if holiday_ctx: prompt_list.append(f"Relevant Holiday Context: {holiday_ctx}.")
+                                    
+                                    if special_attributes.lower() not in ['n/a', 'not found', '']:
+                                        prompt_list.append(f"Key Product Attributes to highlight: {special_attributes}.")
+
                                     prompt_list.extend([
                                         f"Store Location: {caption_structure['location']}.",
                                         f"Language for caption: {caption_structure['language']}.",
@@ -391,17 +400,19 @@ def main():
                                         f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"",
                                         "\nCaption Requirements:",
                                         "- The caption must be unique, engaging, and ready for social media.",
-                                        f"- Clearly include the product name (and brand like '{detected_brands}' if relevant and not 'N/A'), its price, the sale dates (as per 'display_dates'), and the store location.",
+                                        f"- Clearly include the product name (and brand like '{detected_brands}' if relevant and not 'N/A', and attributes like '{special_attributes}' if relevant and not 'N/A'), its price, the sale dates (as per 'display_dates'), and the store location.",
                                         f"- Incorporate relevant emojis suitable for the product, tone, and any holiday context ({holiday_ctx or 'general appeal'})."
                                     ])
                                     
                                     item_category_for_prompt = current_data_item_ref.get('itemCategory', 'N/A')
                                     base_hashtags = caption_structure['baseHashtags']
+                                    hashtag_details = [f"product-specific for '{current_data_item_ref['itemProduct']}'"]
                                     if item_category_for_prompt.lower() not in ['n/a', 'not found', '', 'general grocery']:
-                                        prompt_list.append(f"Product Category: {item_category_for_prompt}.")
-                                        prompt_list.append(f"- Include these base hashtags: {base_hashtags}. Add 2-3 creative, product-specific hashtags. Also, add 1-2 hashtags specifically relevant to the product category '{item_category_for_prompt}'.")
-                                    else:
-                                        prompt_list.append(f"- Include these base hashtags: {base_hashtags}. Add 2-3 creative, relevant hashtags (product-specific, seasonal if applicable).")
+                                        hashtag_details.append(f"category '{item_category_for_prompt}'")
+                                    if special_attributes.lower() not in ['n/a', 'not found', '']:
+                                        hashtag_details.append(f"attributes '{special_attributes}'")
+                                    
+                                    prompt_list.append(f"- Include these base hashtags: {base_hashtags}. Add 2-3 creative hashtags. Also, add 1-2 hashtags for each of the following if applicable: {', '.join(hashtag_details)}.")
 
                                     prompt_list.extend([
                                         f"- The store's main name ({caption_structure['name'].split('(')[0].strip()}) should be prominent if the location \"{caption_structure['location']}\" is just a city/area.",
@@ -458,12 +469,14 @@ def main():
                     new_prod = st.text_input("Product Name", value=data_item.get('itemProduct', ''), key=f"{item_key_prefix}_prod")
                     if new_prod != data_item.get('itemProduct', ''): data_item['itemProduct'] = new_prod; st.rerun()
                     
-                    # New editable fields for Category and Brands
                     new_cat = st.text_input("Product Category", value=data_item.get('itemCategory', 'N/A'), key=f"{item_key_prefix}_cat")
                     if new_cat != data_item.get('itemCategory', 'N/A'): data_item['itemCategory'] = new_cat; st.rerun()
                     
                     new_brands = st.text_input("Detected Brands", value=data_item.get('detectedBrands', 'N/A'), key=f"{item_key_prefix}_brands", help="Comma-separated if multiple")
                     if new_brands != data_item.get('detectedBrands', 'N/A'): data_item['detectedBrands'] = new_brands; st.rerun()
+                    
+                    new_attrs = st.text_input("Special Attributes", value=data_item.get('specialAttributes', 'N/A'), key=f"{item_key_prefix}_attrs", help="e.g., Organic, Gluten-Free")
+                    if new_attrs != data_item.get('specialAttributes', 'N/A'): data_item['specialAttributes'] = new_attrs; st.rerun()
 
 
                     store_options_map = {k: v[list(v.keys())[0]]['name'].split('(')[0].strip() or k.replace('_', ' ') for k, v in INITIAL_BASE_CAPTIONS.items()}
@@ -548,7 +561,7 @@ def main():
                             final_price = get_final_price_string(data_item['selectedPriceFormat'], data_item['itemPriceValue'], data_item['customItemPrice'])
                             if not data_item.get('itemProduct', '').strip() or data_item.get('itemProduct') == "Unknown Product":
                                 current_error += "Product name is missing or unknown. "
-                            if not final_price or "[Price Value]" in final_price or "[Custom Price]" in final_price or "[X for $Y Price]" in final_price or "N/A" in final_price:
+                            if not final_price or "[Price Value]" in final_price or "[Custom Price]" in final_price or "[X for $Y Price]" in final_price or "N/A" in final_price: # Check for "N/A"
                                 current_error += "Invalid or missing price. "
                             
                             display_dates = format_dates_for_caption_context(
@@ -569,12 +582,21 @@ def main():
                                 detected_brands = data_item.get('detectedBrands', 'N/A')
                                 if detected_brands.lower() not in ['n/a', 'not found', '']:
                                     product_display_text += f" (featuring {detected_brands})"
+                                
+                                special_attributes = data_item.get('specialAttributes', "N/A")
+                                if special_attributes.lower() not in ['n/a', 'not found', '']:
+                                     product_display_text += f" ({special_attributes})"
+
+
                                 prompt_list.append(f"Product on Sale: {product_display_text}")
                                 prompt_list.append(f"Price: {final_price}")
-
                                 prompt_list.append(f"Sale Dates (for display in caption): {display_dates}. (The actual sale period is from {data_item['dateRange']['start']} to {data_item['dateRange']['end']}).")
 
                                 if holiday_ctx: prompt_list.append(f"Relevant Holiday Context: {holiday_ctx}.")
+                                
+                                if special_attributes.lower() not in ['n/a', 'not found', '']:
+                                    prompt_list.append(f"Key Product Attributes to highlight: {special_attributes}.")
+
                                 prompt_list.extend([
                                     f"Store Location: {caption_structure['location']}.",
                                     f"Language for caption: {caption_structure['language']}.",
@@ -592,17 +614,19 @@ def main():
                                     f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"",
                                     "\nCaption Requirements:",
                                     "- The caption must be unique, engaging, and ready for social media.",
-                                    f"- Clearly include the product name (and brand like '{detected_brands}' if relevant and not 'N/A'), its price, the sale dates (as per 'display_dates'), and the store location.",
+                                    f"- Clearly include the product name (and brand like '{detected_brands}' if relevant and not 'N/A', and attributes like '{special_attributes}' if relevant and not 'N/A'), its price, the sale dates (as per 'display_dates'), and the store location.",
                                     f"- Incorporate relevant emojis suitable for the product, tone, and any holiday context ({holiday_ctx or 'general appeal'})."
                                 ])
 
                                 item_category_for_prompt = data_item.get('itemCategory', 'N/A')
                                 base_hashtags = caption_structure['baseHashtags']
+                                hashtag_details = [f"product-specific for '{data_item['itemProduct']}'"]
                                 if item_category_for_prompt.lower() not in ['n/a', 'not found', '', 'general grocery']:
-                                    prompt_list.append(f"Product Category: {item_category_for_prompt}.")
-                                    prompt_list.append(f"- Include these base hashtags: {base_hashtags}. Add 2-3 creative, product-specific hashtags. Also, add 1-2 hashtags specifically relevant to the product category '{item_category_for_prompt}'.")
-                                else:
-                                    prompt_list.append(f"- Include these base hashtags: {base_hashtags}. Add 2-3 creative, relevant hashtags (product-specific, seasonal if applicable).")
+                                    hashtag_details.append(f"category '{item_category_for_prompt}'")
+                                if special_attributes.lower() not in ['n/a', 'not found', '']:
+                                    hashtag_details.append(f"attributes '{special_attributes}'")
+
+                                prompt_list.append(f"- Include these base hashtags: {base_hashtags}. Add 2-3 creative hashtags. Also, add 1-2 hashtags for each of the following if applicable: {', '.join(hashtag_details)}.")
                                 
                                 prompt_list.extend([
                                     f"- The store's main name ({caption_structure['name'].split('(')[0].strip()}) should be prominent if the location \"{caption_structure['location']}\" is just a city/area.",
