@@ -65,7 +65,7 @@ def initialize_session_state():
 # --- Main App UI ---
 def main():
     st.set_page_config(layout="wide", page_title="Caption Generator")
-    st.title("✨ Social Media Caption Generator ✨")
+    st.title("Social Media Caption Generator")
     st.caption(f"Powered by Gemini API. Current Date: {datetime.date.today().strftime('%B %d, %Y')}")
 
     initialize_session_state() 
