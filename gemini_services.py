@@ -44,11 +44,8 @@ def generate_caption_with_gemini(text_model, prompt):
         # Log error or handle more gracefully
         raise Exception(f"Gemini caption generation failed: {str(e)}")
 
-# New Image Analysis Prompt Template - to be used by app.py when calling analyze_image_with_gemini
-# This template is now defined here for clarity, but it will be passed from app.py
-# (or app.py can import it if you prefer to define it here directly)
-
-IMAGE_ANALYSIS_PROMPT_TEMPLATE_V2 = (
+# Updated Image Analysis Prompt Template
+IMAGE_ANALYSIS_PROMPT_TEMPLATE_V3 = (
     "Analyze this grocery sale image. Extract all details precisely. "
     "Respond strictly in this format, ensuring each field is on a new line:\n"
     "Product Name: [Primary product name or names clearly featured for sale]\n"
@@ -58,5 +55,6 @@ IMAGE_ANALYSIS_PROMPT_TEMPLATE_V2 = (
     "Promotional Text: [Any other relevant promotional phrases or taglines, like '3 Days Only', 'Special Offer']\n"
     "Product Category: [General category like Produce, Dairy, Meat, Bakery, Pantry, Frozen, Beverages, Snacks, Household. If multiple distinct items, categorize the primary one or provide a comma-separated list if appropriate for a single ad item. Default to 'General Grocery' if unclear.]\n"
     "Detected Brands/Logos: [List any recognizable product brands or logos visible, e.g., Coca-Cola, Lay's. If none, state 'Not found'. Comma-separate if multiple.]\n"
+    "Special Attributes: [List any special product attributes visible like Organic, Gluten-Free, Non-GMO, Keto-Friendly, Vegan, Low Sodium, Fair Trade, etc. If none, state 'Not found'. Comma-separate if multiple.]\n"
     "If a field is not found or unclear for any specific line item above, state 'Not found' for that field and only that field."
 )
