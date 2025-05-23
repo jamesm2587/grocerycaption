@@ -8,7 +8,10 @@ def extract_field(pattern, text, default=""):
     match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
     if match:
         val = match.group(1).strip()
-        return val if val.lower() != "not found" else default
+        # Handle "Not found" or empty strings more consistently
+        if val.lower() in ["not found", "n/a", ""]:
+            return default
+        return val
     return default
 
 def analyze_image_with_gemini(vision_model, image_bytes, prompt_template):
@@ -40,3 +43,20 @@ def generate_caption_with_gemini(text_model, prompt):
     except Exception as e:
         # Log error or handle more gracefully
         raise Exception(f"Gemini caption generation failed: {str(e)}")
+
+# New Image Analysis Prompt Template - to be used by app.py when calling analyze_image_with_gemini
+# This template is now defined here for clarity, but it will be passed from app.py
+# (or app.py can import it if you prefer to define it here directly)
+
+IMAGE_ANALYSIS_PROMPT_TEMPLATE_V2 = (
+    "Analyze this grocery sale image. Extract all details precisely. "
+    "Respond strictly in this format, ensuring each field is on a new line:\n"
+    "Product Name: [Primary product name or names clearly featured for sale]\n"
+    "Price: [Price of the primary product, including currency and unit, e.g., $1.99/lb, 2 for $5.00, 99¢ each]\n"
+    "Sale Dates: [Sale period, e.g., MM/DD-MM/DD, Ends MM/DD, May 15-20. If year is present, include it.]\n"
+    "Store Name: [Visible store name, if any]\n"
+    "Promotional Text: [Any other relevant promotional phrases or taglines, like '3 Days Only', 'Special Offer']\n"
+    "Product Category: [General category like Produce, Dairy, Meat, Bakery, Pantry, Frozen, Beverages, Snacks, Household. If multiple distinct items, categorize the primary one or provide a comma-separated list if appropriate for a single ad item. Default to 'General Grocery' if unclear.]\n"
+    "Detected Brands/Logos: [List any recognizable product brands or logos visible, e.g., Coca-Cola, Lay's. If none, state 'Not found'. Comma-separate if multiple.]\n"
+    "If a field is not found or unclear for any specific line item above, state 'Not found' for that field and only that field."
+)
