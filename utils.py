@@ -79,31 +79,32 @@ def get_holiday_context(start_date_str, end_date_str):
                 hd = get_last_day_of_week(cY, h['month'], h['dayOfWeek'])
                 if hd and hd == current_d: return h['name']
             elif h['type'] == 'monthRange' and h['startMonth'] <= cM <= h['endMonth']:
-                 # For month range, ensure the range is significant to the holiday.
-                 # E.g., if Easter is in late March, a sale early March might not be "Easter Season"
-                 # This simple check is okay for general context.
                 return h['name']
         current_d += datetime.timedelta(days=1)
     return ""
 
 def format_date_string_for_caption_display(date_obj, lang="english", is_hasta_format=False, include_year=False):
+    # Parameters 'lang' and 'is_hasta_format' are kept for interface compatibility 
+    # but 'lang' is no longer used to determine M/D or D/M order for the primary date string.
+    # 'is_hasta_format' is still implicitly used by the calling function 'format_dates_for_caption_context'
+    # to decide if it's formatting a single end date or a range.
     if not date_obj: return ''
-    day = f"{date_obj.day:02d}"
-    month = f"{date_obj.month:02d}"
+    
+    day_str = f"{date_obj.day:02d}"
+    month_str = f"{date_obj.month:02d}"
     year_suffix = ""
+
     if include_year:
         year_suffix = f"/{date_obj.year % 100:02d}"
 
-    if is_hasta_format: # Spanish DD/MM, English MM/DD
-        base = f"{day}/{month}" if lang == "spanish" else f"{month}/{day}"
-        return base + year_suffix
-    # Default format MM/DD or DD/MM based on lang for ranges
-    if lang == "spanish":
-        return f"{day}/{month}" + year_suffix
-    return f"{month}/{day}" + year_suffix
+    # Always return MM/DD format for the day-month part as per user request for consistency.
+    return f"{month_str}/{day_str}{year_suffix}"
 
 
 def format_dates_for_caption_context(start_str, end_str, date_format_pattern, lang):
+    # 'lang' is passed to format_date_string_for_caption_display but won't alter MM/DD ordering there.
+    # 'date_format_pattern' is used here to determine if it's a "Hasta" format, 
+    # if the year should be included, and the separator for ranges.
     if not start_str or not end_str: return "DATES_MISSING"
     try:
         start_date = datetime.datetime.strptime(start_str, "%Y-%m-%d").date()
@@ -111,18 +112,15 @@ def format_dates_for_caption_context(start_str, end_str, date_format_pattern, la
     except ValueError: return "INVALID_DATES"
 
     is_hasta = date_format_pattern.lower().startswith("hasta")
-    # Check if year is explicitly needed, e.g. "Hasta DD/MM/YY"
     include_year = "yy" in date_format_pattern.lower() or "yyyy" in date_format_pattern.lower()
-
 
     if is_hasta:
         # For "Hasta" formats, only the end date is typically shown.
-        # Year inclusion depends on its presence in the original pattern.
+        # The format_date_string_for_caption_display will now always use MM/DD.
         return format_date_string_for_caption_display(end_date, lang, is_hasta_format=True, include_year=include_year)
 
     # For ranges like MM/DD-MM/DD or MM/DD - MM/DD
-    # Year inclusion for ranges is less common unless spanning years or explicitly in pattern.
-    # We'll assume year is not included for ranges unless 'yy' is in the pattern.
+    # The format_date_string_for_caption_display will now always use MM/DD.
     start_formatted = format_date_string_for_caption_display(start_date, lang, is_hasta_format=False, include_year=include_year)
     end_formatted = format_date_string_for_caption_display(end_date, lang, is_hasta_format=False, include_year=include_year)
     
@@ -141,18 +139,16 @@ def get_final_price_string(price_format, price_value, custom_val):
     if price_format == "$ / lb.": return f"${price_value_str} / lb."
     if price_format == "$ each": return f"${price_value_str} each"
     if price_format == "¢ each": return f"{price_value_str}¢ each"
-    return price_value_str # Should not be reached if format is one of the above
+    return price_value_str 
 
 def find_store_key_by_name(name_from_image, base_captions_data):
     if not name_from_image: return None
     norm_name = re.sub(r'[^A-Z0-9]', '', name_from_image.upper())
     for key, variants in base_captions_data.items():
-        # Get the base name from the first variant of the store
         first_variant_key = list(variants.keys())[0]
         store_name_raw = variants[first_variant_key]['name'].split('(')[0].strip()
         norm_store_name = re.sub(r'[^A-Z0-9]', '', store_name_raw.upper())
         if norm_store_name in norm_name or norm_name in norm_store_name:
-            # Added check for empty norm_store_name to prevent false positives if name is empty
             if norm_store_name:
                 return key
     return None
@@ -162,76 +158,58 @@ def try_parse_date_from_image_text(text_from_image):
     text_from_image = text_from_image.strip()
     current_year = datetime.date.today().year
     
-    cleaned_text = text_from_image.replace('.', '/') # . to /
-    # Remove common non-date words. Careful with 'to' if it's part of a month name (though unlikely with MM/DD format)
+    cleaned_text = text_from_image.replace('.', '/') 
     cleaned_text = re.sub(r'(?i)\b(ends|until|from|sale|starts|on|due|valido|expira|thru|through)\b\s*', '', cleaned_text).strip()
-    cleaned_text = cleaned_text.replace(' ', '') # Remove spaces after keyword removal
+    cleaned_text = cleaned_text.replace(' ', '') 
 
     try:
-        # Default to current year if no year is parsed.
-        # Try dayfirst=False (MM/DD) common in US, then dayfirst=True (DD/MM) if needed.
-        # Considering the prompt asks for MM/DD, dayfirst=False should be prioritized.
         dt_obj = dateutil_parse(cleaned_text, dayfirst=False, default=datetime.datetime(current_year, 1, 1))
         
         original_had_year = re.search(r'\b(19\d{2}|20\d{2})\b', text_from_image)
         original_had_short_year = re.search(r'\b(\d{1,2}/\d{1,2}/)(\d{2})\b', text_from_image)
 
-
-        # If dateutil_parse defaulted to Jan 1st because only day/month was found,
-        # and the original string did not suggest a year, set to current year if it's not already.
         if not original_had_year and not original_had_short_year and dt_obj.year != current_year:
             dt_obj = dt_obj.replace(year=current_year)
-        # If original had a year but dateutil picked a year far from current, or defaulted to 1
         elif original_had_year and (abs(dt_obj.year - current_year) > 5 or dt_obj.year == 1):
-             # Try re-parsing with fuzzy matching for complex strings if dateutil made a wild guess.
             try:
                 dt_obj_fuzzy = dateutil_parse(cleaned_text, dayfirst=False, fuzzy=True, default=datetime.datetime(current_year, 1, 1))
-                if abs(dt_obj_fuzzy.year - current_year) <= 5 : # More reasonable year
+                if abs(dt_obj_fuzzy.year - current_year) <= 5 : 
                     dt_obj = dt_obj_fuzzy
-                else: # Fuzzy didn't help, or still bad year
+                else: 
                     return None
-            except: # Fuzzy parsing failed
-                 return None # Original parse was too ambiguous with a year
+            except: 
+                 return None 
         
-        # If only MM/DD was present and parsed, and year became default (e.g. 1/1), ensure current year.
         if dt_obj.year == 1 and not original_had_year and not original_had_short_year:
              dt_obj = dt_obj.replace(year=current_year)
 
-
-        # Final check on year validity
-        if not (current_year - 2 <= dt_obj.year <= current_year + 5): # Allow a small window for past/future sales
-            # If year seems off and wasn't explicitly in text, try with current year
+        if not (current_year - 2 <= dt_obj.year <= current_year + 5): 
             if not original_had_year and not original_had_short_year:
                 dt_obj = dt_obj.replace(year=current_year)
-            # else if original had a year and it's still this far off, it's likely a misparse
             elif original_had_year and not (current_year - 2 <= dt_obj.year <= current_year + 5) :
                  return None
-
 
         return dt_obj.strftime("%Y-%m-%d")
         
     except (ValueError, TypeError, OverflowError):
-        # Fallback to regex for M/D or M/D/YY or M/D/YYYY if dateutil fails
-        # These patterns are for MM/DD format as primary
         patterns = [
-            r"(\d{1,2})/(\d{1,2})/(\d{4})", # MM/DD/YYYY or M/D/YYYY
-            r"(\d{1,2})/(\d{1,2})/(\d{2})",  # MM/DD/YY or M/D/YY
-            r"(\d{1,2})/(\d{1,2})"           # MM/DD or M/D
+            r"(\d{1,2})/(\d{1,2})/(\d{4})", 
+            r"(\d{1,2})/(\d{1,2})/(\d{2})",  
+            r"(\d{1,2})/(\d{1,2})"           
         ]
         for pattern in patterns:
-            match = re.match(pattern, cleaned_text) # Match from start of cleaned_text
+            match = re.match(pattern, cleaned_text) 
             if match:
                 parts = [int(p) for p in match.groups()]
                 try:
                     if len(parts) == 3:
                         m, d, y_part = parts[0], parts[1], parts[2]
-                        y = y_part if y_part > 1000 else (2000 + y_part if y_part < 70 else 1900 + y_part) # Handle 2-digit year
-                        # Validate month and day
+                        y = y_part if y_part > 1000 else (2000 + y_part if y_part < 70 else 1900 + y_part) 
                         if not (1 <= m <= 12 and 1 <= d <= 31): continue
                         return datetime.date(y, m, d).strftime("%Y-%m-%d")
                     elif len(parts) == 2:
                         m, d = parts[0], parts[1]
                         if not (1 <= m <= 12 and 1 <= d <= 31): continue
                         return datetime.date(current_year, m, d).strftime("%Y-%m-%d")
-                except ValueError: continue # Invalid date (e.g., Feb 30)
+                except ValueError: continue 
     return None
