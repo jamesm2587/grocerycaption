@@ -48,7 +48,8 @@ def generate_caption_with_gemini(text_model, prompt):
 IMAGE_ANALYSIS_PROMPT_TEMPLATE = (
     "Analyze this grocery sale image. Extract all details precisely. "
     "Respond strictly in this format, ensuring each field is on a new line:\n"
-    "Product Name: [Primary product name or names clearly featured for sale]\n"
+    # MODIFIED LINE BELOW:
+    "Product Name: [Identify the primary product name. If multiple names or languages for the same product are visible (e.g., English and Spanish), prioritize the name written in the largest text. If text sizes are similar, prefer the English name if available. List clearly featured sale items.]\n"
     "Price: [Price of the primary product, including currency and unit, e.g., $1.99/lb, 2 for $5.00, 99¢ each]\n"
     "Sale Dates: [Sale period, e.g., MM/DD-MM/DD, Ends MM/DD, May 15-20. If year is present, include it.]\n"
     "Store Name: [Visible store name, if any]\n"
