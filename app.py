@@ -303,7 +303,7 @@ def main():
         st.markdown("---")
         items_selected_for_batch = any(item.get('batch_selected', False) for item in st.session_state.analyzed_image_data_set)
         
-        if st.button("✍️ Generate Captions for Selected Items", 
+        if st.button("Generate Captions for Selected Items", 
                       type="primary", 
                       use_container_width=True, 
                       disabled=st.session_state.is_batch_generating_captions or not items_selected_for_batch):
@@ -688,7 +688,7 @@ def main():
             st.markdown("---") 
     else:
         if not st.session_state.is_analyzing_images and not st.session_state.uploaded_files_info:
-            st.info("☝️ Upload some images of grocery sale ads to get started!")
+            st.info("Upload some images of grocery sale ads to get started!")
 
 if __name__ == "__main__":
     main()
