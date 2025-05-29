@@ -21,7 +21,7 @@ INITIAL_BASE_CAPTIONS = {
     'SAMS_FOODS_SUPERMARKET': {
         'WEEKLY_SPECIALS': {
             'id': 'samsfods_weekly',
-            'name': "Sams Fods Supermarket (Weekly Specials)",
+            'name': "Sams Foods Supermarket (Weekly Specials)",
             'language': "english",
             'original_example': "Beef Chuck Roast Steak $4.85 x lb.\n Pricing 05/28-06/03\n1805 Dairy Ave. Corcoran, CA.",
             'defaultProduct': "Beef Chuck Roast Steak",
