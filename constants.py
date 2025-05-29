@@ -18,7 +18,7 @@ INITIAL_BASE_CAPTIONS = {
         'THREE_DAY_SALE': {'id': 'ifm_3_day', 'name': "International Fresh Market (3 Day Sale)", 'language': "english", 'original_example': "3 DAY SALE\n 05/13 - 05/15\n Fresh Zucchini 35¢ x lb.\n...", 'defaultProduct': "Fresh Zucchini", 'defaultPrice': "35¢ x lb.", 'dateFormat': "MM/DD - MM/DD", 'durationTextPattern': "3 DAY SALE", 'location': "International Fresh Market, Naperville", 'baseHashtags': "#Naperville #Fresh #Market #Produce #Meat #internationalfreshmarket"},
         'CUSTOMER_APPRECIATION_SALE': {'id': 'ifm_customer_appreciation', 'name': "International Fresh Market (Customer Appreciation Sale)", 'language': "english", 'original_example': "CUSTOMER APPRECIATION SALE \n Fresh Green Cabbage 25¢ x lb.\n4 Days Only 05/09-05/12\n...", 'defaultProduct': "Fresh Green Cabbage", 'defaultPrice': "25¢ x lb.", 'dateFormat': "MM/DD-MM/DD", 'durationTextPattern': "4 Days Only", 'location': "International Fresh Market, Naperville", 'baseHashtags': "#Naperville #Fresh #Market #Produce #Meat #internationalfreshmarket"}
     },
-    'SAMS_FODS_SUPERMARKET': {
+    'SAMS_FOODS_SUPERMARKET': {
         'WEEKLY_SPECIALS': {
             'id': 'samsfods_weekly',
             'name': "Sams Fods Supermarket (Weekly Specials)",
