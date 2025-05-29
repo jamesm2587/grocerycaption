@@ -3,8 +3,8 @@ import streamlit as st
 import datetime
 import io
 import re
-from streamlit.components.v1 import html as st_html_component # Renamed for clarity
-import html as html_escaper # For robust HTML escaping
+from streamlit.components.v1 import html as st_html_component
+import html as html_escaper
 
 # Local imports
 from config import VISION_MODEL, TEXT_MODEL
@@ -13,7 +13,6 @@ from utils import (
     get_current_day_for_teds, get_holiday_context, format_dates_for_caption_context,
     get_final_price_string, find_store_key_by_name, try_parse_date_from_image_text
 )
-# Import the reverted prompt template
 from gemini_services import analyze_image_with_gemini, generate_caption_with_gemini, extract_field, IMAGE_ANALYSIS_PROMPT_TEMPLATE
 
 
@@ -25,7 +24,17 @@ def remove_file_at_index(index_to_remove):
         removed_file_name = st.session_state.uploaded_files_info[index_to_remove]['name']
         st.session_state.uploaded_files_info.pop(index_to_remove)
 
-        if 'analyzed_image_data_set' in st.session_state and st.session_state.analyzed_image_data_set:
+        # If individual removal results in no files left, reset dependent states and uploader
+        if not st.session_state.uploaded_files_info:
+            st.session_state.analyzed_image_data_set = []
+            if 'analyzed_image_data_set_source_length' in st.session_state:
+                del st.session_state.analyzed_image_data_set_source_length
+            st.session_state.last_caption_by_store = {}
+            st.session_state.info_message_after_action = "All images and associated data have been cleared."
+            # Increment uploader key to reset it
+            st.session_state.uploader_key_suffix = st.session_state.get('uploader_key_suffix', 0) + 1
+        elif 'analyzed_image_data_set' in st.session_state and st.session_state.analyzed_image_data_set:
+            # If some files remain but analysis was present, clear analysis to force re-analysis
             st.session_state.analyzed_image_data_set = []
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
@@ -34,29 +43,20 @@ def remove_file_at_index(index_to_remove):
         else:
             st.session_state.info_message_after_action = f"Image '{removed_file_name}' removed."
 
-        if not st.session_state.uploaded_files_info:
-            st.session_state.analyzed_image_data_set = []
-            if 'analyzed_image_data_set_source_length' in st.session_state:
-                del st.session_state.analyzed_image_data_set_source_length
-            st.session_state.last_caption_by_store = {}
-            # Ensure info message reflects all clear if last image removed
-            st.session_state.info_message_after_action = "All images and associated data have been cleared."
-
 
 # --- Callback function for removing all uploaded files and data ---
-# NEW FUNCTION
 def handle_remove_all_images():
     st.session_state.uploaded_files_info = []
     st.session_state.analyzed_image_data_set = []
     st.session_state.last_caption_by_store = {}
     if 'analyzed_image_data_set_source_length' in st.session_state:
         del st.session_state.analyzed_image_data_set_source_length
-    # Clear other potentially lingering states related to image processing
     st.session_state.is_analyzing_images = False
     st.session_state.is_batch_generating_captions = False
-    st.session_state.error_message = "" # Clear any existing error messages
+    st.session_state.error_message = ""
     st.session_state.info_message_after_action = "All uploaded images and their associated data have been cleared."
-    # Streamlit will automatically rerun the script due to the on_click, updating the UI.
+    # Increment uploader key to reset the st.file_uploader widget
+    st.session_state.uploader_key_suffix = st.session_state.get('uploader_key_suffix', 0) + 1
 
 
 # --- Streamlit App State Initialization ---
@@ -74,7 +74,8 @@ def initialize_session_state():
         'is_analyzing_images': False,
         'is_batch_generating_captions': False,
         'info_message_after_action': "",
-        'last_caption_by_store': {}
+        'last_caption_by_store': {},
+        'uploader_key_suffix': 0  # NEW: For resetting file uploader
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -123,23 +124,34 @@ def main():
     st.sidebar.markdown("---")
     st.sidebar.caption(f"Caption Gen v3.6.1 // {datetime.date.today().strftime('%Y-%m-%d')}")
 
-
+    # MODIFIED: Dynamic key for file uploader
     uploaded_file_objects = st.file_uploader(
         "Upload Image(s) of Grocery Sale Ads", type=["png", "jpg", "jpeg", "webp"],
-        accept_multiple_files=True, key="uploader"
+        accept_multiple_files=True, key=f"uploader_{st.session_state.get('uploader_key_suffix', 0)}"
     )
 
     if uploaded_file_objects:
         new_files_info = []
+        # Use a simpler check for existing files based on name and size, if needed,
+        # but with uploader key change, this might behave more predictably.
         existing_file_signatures = {(f_info['name'], len(f_info['bytes'])) for f_info in st.session_state.uploaded_files_info}
 
         for uploaded_file in uploaded_file_objects:
             file_bytes = uploaded_file.getvalue()
+            # Check if this exact file instance (by name and size) is already in our list from previous uploads in this session
+            # This logic might need adjustment depending on how uploader_key_suffix interacts with re-uploads.
+            # For simplicity, if uploader_key_suffix changes, assume all files from it are "new" for this uploader instance.
+            # The more robust check is to ensure we don't add duplicates if the user re-selects the same files
+            # without clearing.
+            # However, the primary goal here is clearing, so let's assume new_files_info will be populated correctly.
+
+            # If files are uploaded, and they aren't already in uploaded_files_info from a previous uploader instance (less likely with key changes)
             if (uploaded_file.name, len(file_bytes)) not in existing_file_signatures:
-                new_files_info.append({"name": uploaded_file.name, "type": uploaded_file.type, "bytes": file_bytes})
+                 new_files_info.append({"name": uploaded_file.name, "type": uploaded_file.type, "bytes": file_bytes})
 
         if new_files_info:
             st.session_state.uploaded_files_info.extend(new_files_info)
+            # When new files are added, typically we want to clear old analysis
             st.session_state.analyzed_image_data_set = []
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
@@ -147,13 +159,12 @@ def main():
             st.session_state.info_message_after_action = f"{len(new_files_info)} new image(s) added. Previous analysis and continuity references cleared. Click 'Analyze' to process all images."
             st.rerun()
 
-    # MODIFIED SECTION - Action Buttons
+
     if st.session_state.uploaded_files_info:
         action_cols = st.columns(2)
         analyze_button_disabled = st.session_state.is_analyzing_images or not st.session_state.uploaded_files_info
-        
+
         if action_cols[0].button("Analyze Uploaded Image(s)", disabled=analyze_button_disabled, type="primary", use_container_width=True):
-            # No need for the inner 'if not st.session_state.uploaded_files_info:' check as button is disabled
             st.session_state.is_analyzing_images = True
             st.session_state.analyzed_image_data_set = []
             st.session_state.error_message = ""
@@ -161,12 +172,12 @@ def main():
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
             st.rerun()
-        
+
         action_cols[1].button("🗑️ Remove All & Clear Data",
                               key="remove_all_images_button",
-                              on_click=handle_remove_all_images, # NEW callback
+                              on_click=handle_remove_all_images,
                               use_container_width=True,
-                              type="secondary") # Using "secondary" which is less alarming than "danger"
+                              type="secondary")
         st.markdown("---")
 
 
@@ -185,14 +196,14 @@ def main():
                         key=f"remove_btn_{actual_file_index}_{file_info['name']}",
                         on_click=remove_file_at_index,
                         args=(actual_file_index,),
-                        use_container_width=True, type="secondary" # Changed from "primary" to "secondary" for consistency
+                        use_container_width=True, type="secondary"
                     )
             for k_empty in range(len(row_files_batch), previews_per_row):
                 with cols[k_empty]: st.container(height=50)
+        st.markdown("---") # Ensure separator after previews if they exist
 
-        # Removed the standalone "Analyze Uploaded Image(s)" button from here as it's moved above
-        # st.markdown("---")
-
+    # Analysis logic (if st.session_state.is_analyzing_images and st.session_state.uploaded_files_info)
+    # ... (rest of the analysis loop, unchanged) ...
     if st.session_state.is_analyzing_images and st.session_state.uploaded_files_info:
         with st.spinner("Analyzing images... This may take a few moments."):
             progress_bar = st.progress(0)
@@ -328,8 +339,10 @@ def main():
             st.success(f"✅ Image analysis complete for {len(temp_analysis_results)} image(s). Review and generate captions below.")
             st.rerun()
 
+    # Batch caption generation button and logic
+    # ... (rest of the batch caption generation loop, unchanged) ...
     if st.session_state.analyzed_image_data_set and not st.session_state.is_analyzing_images:
-        st.markdown("---")
+        st.markdown("---") # This separator might be redundant if previews are not shown and this is the next thing
         items_selected_for_batch = any(item.get('batch_selected', False) for item in st.session_state.analyzed_image_data_set)
 
         if st.button("✍️ Generate Captions for Selected Items",
@@ -463,10 +476,18 @@ def main():
                 st.info("No captions were generated in this batch (either none selected or errors occurred).")
             st.rerun()
 
-    if st.session_state.analyzed_image_data_set:
-        if not st.session_state.is_batch_generating_captions:
-            st.markdown("---")
-            st.header("Image Details & Caption Generation")
+    # Individual item details and caption generation loop
+    # ... (rest of the item details loop, unchanged) ...
+    if st.session_state.analyzed_image_data_set: # This condition ensures this section only shows if there's analyzed data
+        if not st.session_state.is_batch_generating_captions: # Check if not in batch mode
+            # This header might appear even if previews are gone, if analyzed_image_data_set is cleared *after* previews
+            # However, handle_remove_all_images clears analyzed_image_data_set, so this section should not run.
+            if not st.session_state.uploaded_files_info: # Extra check: if no uploaded files, this section is irrelevant
+                 pass # Don't show header if all images were cleared
+            else:
+                st.markdown("---")
+                st.header("Image Details & Caption Generation")
+
 
         for index, data_item_proxy in enumerate(st.session_state.analyzed_image_data_set):
             item_key_prefix = f"item_{data_item_proxy['id']}"
@@ -702,7 +723,7 @@ def main():
                     st_html_component(copy_button_html_content, height=45)
 
             st.markdown("---")
-    else:
+    else: # This 'else' corresponds to 'if st.session_state.analyzed_image_data_set:'
         if not st.session_state.is_analyzing_images and not st.session_state.uploaded_files_info:
             st.info("☝️ Upload some images of grocery sale ads to get started!")
 
