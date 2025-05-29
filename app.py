@@ -6,7 +6,7 @@ import re
 from streamlit.components.v1 import html as st_html_component
 import html as html_escaper
 import copy
-import json # NEW IMPORT for file persistence
+import json
 
 # Local imports
 from config import VISION_MODEL, TEXT_MODEL
@@ -17,7 +17,6 @@ from utils import (
 )
 from gemini_services import analyze_image_with_gemini, generate_caption_with_gemini, extract_field, IMAGE_ANALYSIS_PROMPT_TEMPLATE
 
-# NEW: Define filename for custom stores
 CUSTOM_STORES_FILE = "custom_stores.json"
 
 # --- Callback function for removing an uploaded file ---
@@ -65,22 +64,18 @@ def initialize_session_state():
     if INITIAL_BASE_CAPTIONS:
         default_store_key = list(INITIAL_BASE_CAPTIONS.keys())[0]
 
-    # NEW: Load custom stores from file
     loaded_custom_captions = {}
     try:
         with open(CUSTOM_STORES_FILE, 'r') as f:
             loaded_custom_captions = json.load(f)
-        if not isinstance(loaded_custom_captions, dict): # Basic validation
+        if not isinstance(loaded_custom_captions, dict):
             st.warning(f"{CUSTOM_STORES_FILE} does not contain a valid dictionary. Starting with no custom stores.")
             loaded_custom_captions = {}
     except FileNotFoundError:
-        # This is fine, file will be created on first save
         pass
     except json.JSONDecodeError:
         st.error(f"Error decoding {CUSTOM_STORES_FILE}. File might be corrupted. Starting with no custom stores for this session.")
-        # Optionally, backup the corrupted file here if needed
         loaded_custom_captions = {}
-
 
     defaults = {
         'analyzed_image_data_set': [],
@@ -93,7 +88,7 @@ def initialize_session_state():
         'info_message_after_action': "",
         'last_caption_by_store': {},
         'uploader_key_suffix': 0,
-        'custom_base_captions': loaded_custom_captions # MODIFIED: Initialize with loaded data
+        'custom_base_captions': loaded_custom_captions
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -103,11 +98,11 @@ def initialize_session_state():
 def get_combined_captions():
     combined = copy.deepcopy(INITIAL_BASE_CAPTIONS)
     custom_captions = st.session_state.get('custom_base_captions', {})
-    if isinstance(custom_captions, dict): # Ensure custom_captions is a dict
+    if isinstance(custom_captions, dict):
         for store_key, store_sale_types in custom_captions.items():
             if store_key not in combined:
                 combined[store_key] = {}
-            if isinstance(store_sale_types, dict): # Ensure sale types is a dict
+            if isinstance(store_sale_types, dict):
                  combined[store_key].update(store_sale_types)
     return combined
 
@@ -160,7 +155,7 @@ def main():
 
     with st.sidebar.expander("➕ Add New Store Definition (Permanent)", expanded=False):
         with st.form("new_store_form", clear_on_submit=True):
-            st.caption("Define a new store and one sale type. Data is saved to custom_stores.json.")
+            st.caption("Define a new store and one sale type. Data is saved to custom_stores.json (may be lost on some hosting platforms on redeploy without external storage).")
             
             store_name_form = st.text_input("Store Name*", help="e.g., 'My Corner Shop'")
             sale_type_key_form = st.text_input("Sale Type Key*", help="Uppercase identifier, e.g., 'WEEKLY', 'SPECIAL'. No spaces/special chars except underscore.")
@@ -198,7 +193,6 @@ def main():
                             'baseHashtags': base_hashtags_form
                         }
                         
-                        # Ensure custom_base_captions exists and is a dict
                         if not isinstance(st.session_state.get('custom_base_captions'), dict):
                             st.session_state.custom_base_captions = {}
                         
@@ -207,15 +201,14 @@ def main():
                         
                         st.session_state.custom_base_captions[store_key][sale_type_key] = new_sale_type_details
                         
-                        # NEW: Save to file
                         try:
                             with open(CUSTOM_STORES_FILE, 'w') as f:
                                 json.dump(st.session_state.custom_base_captions, f, indent=4)
-                            st.success(f"Store '{store_name_form}' - '{sale_type_key}' saved permanently!")
+                            st.success(f"Store '{store_name_form}' - '{sale_type_key}' saved to {CUSTOM_STORES_FILE}!")
                         except IOError as e:
                             st.error(f"Error saving to {CUSTOM_STORES_FILE}: {e}. Changes may be session-only.")
                         
-                        st.rerun() # Rerun to update combined_captions and dropdowns
+                        st.rerun()
 
     st.sidebar.markdown("---")
     st.sidebar.caption(f"Caption Gen v3.6.1 // {datetime.date.today().strftime('%Y-%m-%d')}")
@@ -235,7 +228,7 @@ def main():
                 new_files_info.append({"name": uploaded_file.name, "type": uploaded_file.type, "bytes": file_bytes})
         if new_files_info:
             st.session_state.uploaded_files_info.extend(new_files_info)
-            st.session_state.analyzed_image_data_set = [] # Clear analysis for new uploads
+            st.session_state.analyzed_image_data_set = []
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
             st.session_state.last_caption_by_store = {}
@@ -279,7 +272,7 @@ def main():
             current_image_analysis_prompt = IMAGE_ANALYSIS_PROMPT_TEMPLATE
             for idx, file_info in enumerate(st.session_state.uploaded_files_info):
                 progress_text = f"Analyzing {file_info['name']} ({idx+1}/{total_files})..."
-                progress_bar.text(progress_text) # Update progress bar text
+                progress_bar.text(progress_text) 
                 progress_bar.progress((idx + 1) / total_files)
                 analysis_data_item = {
                     "id": f"image-{file_info['name']}-{idx}", "original_filename": file_info['name'],
@@ -319,7 +312,7 @@ def main():
                     else: analysis_data_item['selectedPriceFormat'] = "CUSTOM"; analysis_data_item['customItemPrice'] = "N/A"
                     detected_store_name = extract_field(r"^Store Name: (.*)$", analysis_text)
                     if detected_store_name and detected_store_name.lower() != "n/a" and detected_store_name.lower() != "not found":
-                        matched_key = find_store_key_by_name(detected_store_name, current_combined_captions) # USE COMBINED
+                        matched_key = find_store_key_by_name(detected_store_name, current_combined_captions)
                         if matched_key: analysis_data_item['selectedStoreKey'] = matched_key
                         else: analysis_data_item['analysisError'] += f"Store '{detected_store_name}' not in predefined list. Defaulting. "
                     dates_str = extract_field(r"^Sale Dates: (.*)$", analysis_text)
@@ -335,7 +328,7 @@ def main():
                                     end_day_num = int(end_part_text.strip())
                                     month_to_use, year_to_use = start_dt_obj.month, start_dt_obj.year
                                     if start_dt_obj.day > end_day_num: month_to_use = (start_dt_obj.month % 12) + 1;
-                                    if month_to_use == 1 and start_dt_obj.month == 12: year_to_use += 1 # Correct year increment
+                                    if month_to_use == 1 and start_dt_obj.month == 12: year_to_use += 1
                                     end_part_text_for_parse = f"{month_to_use}/{end_day_num}"
                                     if year_to_use != datetime.date.today().year: end_part_text_for_parse += f"/{year_to_use % 100}"
                                     parsed_end = try_parse_date_from_image_text(end_part_text_for_parse)
@@ -362,8 +355,6 @@ def main():
 
     # --- Batch Caption Generation ---
     if st.session_state.analyzed_image_data_set and not st.session_state.is_analyzing_images:
-        # (This section also needs to use current_combined_captions for store_info_set)
-        # ... (Code for batch caption generation largely unchanged, but ensure store_info_set = current_combined_captions.get(store_details_key) is used)
         items_selected_for_batch = any(item.get('batch_selected', False) for item in st.session_state.analyzed_image_data_set)
         if st.button("✍️ Generate Captions for Selected Items", type="primary", use_container_width=True, disabled=st.session_state.is_batch_generating_captions or not items_selected_for_batch):
             st.session_state.is_batch_generating_captions = True
@@ -381,7 +372,7 @@ def main():
                         current_data_item_ref = st.session_state.analyzed_image_data_set[index_in_session_state]
                         current_data_item_ref['generatedCaption'] = ""
                         store_details_key = current_data_item_ref['selectedStoreKey']
-                        store_info_set = current_combined_captions.get(store_details_key) # USE COMBINED
+                        store_info_set = current_combined_captions.get(store_details_key)
                         current_error = current_data_item_ref.get('analysisError', "")
                         if not store_info_set: current_error += f" Store details for '{store_details_key}' not found."
                         else:
@@ -395,22 +386,35 @@ def main():
                             if not caption_structure: current_error += f" Caption structure for '{sale_detail_sub_key}' in '{store_details_key}' not found."
                             else:
                                 final_price = get_final_price_string(current_data_item_ref['selectedPriceFormat'], current_data_item_ref['itemPriceValue'], current_data_item_ref['customItemPrice'])
-                                if not current_data_item_ref.get('itemProduct', '').strip() or current_data_item_ref.get('itemProduct') == "Unknown Product": current_error += " Product name missing/unknown."
+                                product_display_text = current_data_item_ref.get('itemProduct', 'Unknown Product') # Ensure product_display_text is defined
+                                if not product_display_text.strip() or product_display_text == "Unknown Product": current_error += " Product name missing/unknown."
                                 if not final_price or "[Price Value]" in final_price or "[Custom Price]" in final_price or "[X for $Y Price]" in final_price or "N/A" in final_price: current_error += " Invalid/missing price."
                                 display_dates = format_dates_for_caption_context(current_data_item_ref['dateRange']['start'], current_data_item_ref['dateRange']['end'], caption_structure['dateFormat'], caption_structure['language'])
                                 if "MISSING" in display_dates or "INVALID" in display_dates: current_error += " Invalid dates for caption."
-                                if not current_error.strip().endswith((".", "!", "?", "found.")): # Check error suffix before building prompt
+                                
+                                # Check current_error before proceeding with prompt generation
+                                can_generate_prompt = True
+                                for err_check in ["not found.", "missing/unknown.", "missing price.", "Invalid dates for caption."]:
+                                    if err_check in current_error:
+                                        can_generate_prompt = False
+                                        break
+                                
+                                if can_generate_prompt:
                                     holiday_ctx = get_holiday_context(current_data_item_ref['dateRange']['start'], current_data_item_ref['dateRange']['end'])
                                     prompt_list = [ f"Generate a social media caption for a grocery store promotion.", f"Store & Sale Type: {caption_structure['name']}" ]
-                                    product_display_text = current_data_item_ref['itemProduct']; detected_brands = current_data_item_ref.get('detectedBrands', 'N/A')
-                                    if detected_brands.lower() not in ['n/a', 'not found', '']: product_display_text += f" (featuring {detected_brands})"
-                                    prompt_list.extend([f"Product on Sale: {product_display_text}", f"Price: {final_price}", f"Sale Dates (for display in caption): {display_dates}. (Actual period: {current_data_item_ref['dateRange']['start']} to {current_data_item_ref['dateRange']['end']})."])
+                                    detected_brands = current_data_item_ref.get('detectedBrands', 'N/A')
+                                    temp_product_display_text = product_display_text # Use temp for prompt construction
+                                    if detected_brands.lower() not in ['n/a', 'not found', '']: temp_product_display_text += f" (featuring {detected_brands})"
+                                    prompt_list.extend([f"Product on Sale: {temp_product_display_text}", f"Price: {final_price}", f"Sale Dates (for display in caption): {display_dates}. (Actual period: {current_data_item_ref['dateRange']['start']} to {current_data_item_ref['dateRange']['end']})."])
                                     if holiday_ctx: prompt_list.append(f"Relevant Holiday Context: {holiday_ctx}.")
                                     prompt_list.extend([f"Store Location: {caption_structure['location']}.", f"Language for caption: {caption_structure['language']}.", f"Desired Tone: {st.session_state.global_selected_tone}."])
                                     if holiday_ctx and st.session_state.global_selected_tone == "Seasonal / Festive": prompt_list.append(f"Strongly emphasize the {holiday_ctx} theme and use relevant emojis.")
                                     if reference_caption_for_current_store_batch: prompt_list.extend([f"\nIMPORTANT STYLISTIC NOTE: For consistency with other posts for this store, please try to follow a similar structure, tone, and overall style to the following reference caption. Adapt product details, price, and specific emojis for the current item, but keep the general formatting and sentence flow consistent with the reference.", f"REFERENCE CAPTION START:\n{reference_caption_for_current_store_batch}\nREFERENCE CAPTION END\nEnsure your new caption is unique and accurate for the current product."])
-                                    prompt_list.extend([f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"", "\nCaption Requirements:", "- Unique, engaging, ready for social media.", f"- Clearly include product name (and brand like '{detected_brands}' if relevant and not 'N/A'), price, sale dates (as per 'display_dates'), and store location.", f"- Incorporate relevant emojis for product, tone, and holiday ({holiday_ctx or 'general appeal'})."])
-                                    item_category_for_prompt = current_data_item_ref.get('itemCategory', 'N/A'); base_hashtags = caption_structure['baseHashtags']; hashtag_details = [f"product-specific for '{current_data_item_ref['itemProduct']}'"]
+                                    prompt_list.extend([f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"", "\nCaption Requirements:", "- Unique, engaging, ready for social media.", 
+                                                        # MODIFIED PROMPT REQUIREMENT FOR PRICE ASSOCIATION
+                                                        f"- Feature the product on sale by stating its name (and brand like '{detected_brands}' if relevant and not 'N/A') immediately followed by or closely linked to its price. For example: '{temp_product_display_text} is now {final_price}!'. Also, clearly include the sale dates (as per 'display_dates'), and the store location.",
+                                                        f"- Incorporate relevant emojis for product, tone, and holiday ({holiday_ctx or 'general appeal'})."])
+                                    item_category_for_prompt = current_data_item_ref.get('itemCategory', 'N/A'); base_hashtags = caption_structure['baseHashtags']; hashtag_details = [f"product-specific for '{product_display_text}'"] # Use original product_display_text for hashtags
                                     if item_category_for_prompt.lower() not in ['n/a', 'not found', '', 'general grocery']: hashtag_details.append(f"category '{item_category_for_prompt}'")
                                     prompt_list.append(f"- Include these base hashtags: {base_hashtags}. Add 2-3 creative hashtags. Also, 1-2 hashtags for each: {', '.join(hashtag_details)}.")
                                     prompt_list.extend([f"- Store's main name ({caption_structure['name'].split('(')[0].strip()}) should be prominent if location \"{caption_structure['location']}\" is just a city/area.", "- Good formatting with line breaks."])
@@ -434,8 +438,6 @@ def main():
             st.markdown("---")
             st.header("Image Details & Caption Generation")
         for index, data_item_proxy in enumerate(st.session_state.analyzed_image_data_set):
-            # (This section also needs to use current_combined_captions for store_options_map and store_info_set)
-            # ... (Code for individual item forms and caption generation largely unchanged, but ensure store_options_map and store_info_set use current_combined_captions)
             item_key_prefix = f"item_{data_item_proxy['id']}"
             data_item = st.session_state.analyzed_image_data_set[index]
             with st.container(border=True):
@@ -451,7 +453,7 @@ def main():
                     if new_cat != data_item.get('itemCategory', 'N/A'): data_item['itemCategory'] = new_cat; st.rerun()
                     new_brands = st.text_input("Detected Brands", value=data_item.get('detectedBrands', 'N/A'), key=f"{item_key_prefix}_brands_ind", help="Comma-separated")
                     if new_brands != data_item.get('detectedBrands', 'N/A'): data_item['detectedBrands'] = new_brands; st.rerun()
-                    store_options_map = { k: (v[list(v.keys())[0]]['name'].split('(')[0].strip() if v and list(v.keys()) else k.replace('_', ' ')) or k.replace('_', ' ') for k, v in current_combined_captions.items()} # USE COMBINED
+                    store_options_map = { k: (v[list(v.keys())[0]]['name'].split('(')[0].strip() if v and list(v.keys()) else k.replace('_', ' ')) or k.replace('_', ' ') for k, v in current_combined_captions.items()}
                     current_store_key = data_item.get('selectedStoreKey', st.session_state.global_selected_store_key)
                     if not current_combined_captions: st.warning("No stores defined!")
                     elif current_store_key not in store_options_map: current_store_key = list(store_options_map.keys())[0] if store_options_map else None; data_item['selectedStoreKey'] = current_store_key
@@ -497,7 +499,7 @@ def main():
                     st.session_state[caption_loading_key] = True
                     data_item['generatedCaption'] = ""
                     store_details_key = data_item['selectedStoreKey']
-                    store_info_set = current_combined_captions.get(store_details_key) # USE COMBINED
+                    store_info_set = current_combined_captions.get(store_details_key)
                     current_error = data_item.get('analysisError', "")
                     if not store_info_set: current_error += f" Store details for '{store_details_key}' not found."
                     else:
@@ -511,23 +513,35 @@ def main():
                         if not caption_structure: current_error += f" Caption structure for '{sale_detail_sub_key}' under '{store_details_key}' not found."
                         else:
                             final_price = get_final_price_string(data_item['selectedPriceFormat'], data_item['itemPriceValue'], data_item['customItemPrice'])
-                            if not data_item.get('itemProduct', '').strip() or data_item.get('itemProduct') == "Unknown Product": current_error += " Product name missing/unknown."
+                            product_display_text = data_item.get('itemProduct', 'Unknown Product') # Ensure defined
+                            if not product_display_text.strip() or product_display_text == "Unknown Product": current_error += " Product name missing/unknown."
                             if not final_price or "[Price Value]" in final_price or "[Custom Price]" in final_price or "[X for $Y Price]" in final_price or "N/A" in final_price: current_error += " Invalid/missing price."
                             display_dates = format_dates_for_caption_context(data_item['dateRange']['start'], data_item['dateRange']['end'], caption_structure['dateFormat'], caption_structure['language'])
                             if "MISSING" in display_dates or "INVALID" in display_dates: current_error += " Invalid date range for caption."
-                            if not current_error.strip().endswith((".", "!", "?", "found.")):
+                            
+                            can_generate_prompt = True # Check error status
+                            for err_check in ["not found.", "missing/unknown.", "missing price.", "Invalid date range for caption."]:
+                                if err_check in current_error:
+                                    can_generate_prompt = False
+                                    break
+
+                            if can_generate_prompt:
                                 holiday_ctx = get_holiday_context(data_item['dateRange']['start'], data_item['dateRange']['end'])
                                 prompt_list = [ f"Generate a social media caption for a grocery store promotion.", f"Store & Sale Type: {caption_structure['name']}" ]
-                                product_display_text = data_item['itemProduct']; detected_brands = data_item.get('detectedBrands', 'N/A')
-                                if detected_brands.lower() not in ['n/a', 'not found', '']: product_display_text += f" (featuring {detected_brands})"
-                                prompt_list.extend([f"Product on Sale: {product_display_text}", f"Price: {final_price}", f"Sale Dates (for display in caption): {display_dates}. (Actual period: {data_item['dateRange']['start']} to {data_item['dateRange']['end']})."])
+                                detected_brands = data_item.get('detectedBrands', 'N/A')
+                                temp_product_display_text = product_display_text # Use temp for prompt
+                                if detected_brands.lower() not in ['n/a', 'not found', '']: temp_product_display_text += f" (featuring {detected_brands})"
+                                prompt_list.extend([f"Product on Sale: {temp_product_display_text}", f"Price: {final_price}", f"Sale Dates (for display in caption): {display_dates}. (Actual period: {data_item['dateRange']['start']} to {data_item['dateRange']['end']})."])
                                 if holiday_ctx: prompt_list.append(f"Relevant Holiday Context: {holiday_ctx}.")
                                 prompt_list.extend([f"Store Location: {caption_structure['location']}.", f"Language for caption: {caption_structure['language']}.", f"Desired Tone: {st.session_state.global_selected_tone}."])
                                 if holiday_ctx and st.session_state.global_selected_tone == "Seasonal / Festive": prompt_list.append(f"Strongly emphasize the {holiday_ctx} theme and use relevant emojis.")
                                 reference_caption_for_store = st.session_state.last_caption_by_store.get(store_details_key)
                                 if reference_caption_for_store: prompt_list.extend([f"\nIMPORTANT STYLISTIC NOTE: For consistency with other posts for this store, please try to follow a similar structure, tone, and overall style to the following reference caption. Adapt product details, price, and specific emojis for the current item, but keep the general formatting and sentence flow consistent with the reference.", f"REFERENCE CAPTION START:\n{reference_caption_for_store}\nREFERENCE CAPTION END\nEnsure your new caption is unique and accurate for the current product."])
-                                prompt_list.extend([f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"", "\nCaption Requirements:", "- Unique, engaging, ready for social media.", f"- Clearly include product name (and brand like '{detected_brands}' if relevant and not 'N/A'), price, sale dates (as per 'display_dates'), and store location.", f"- Incorporate relevant emojis for product, tone, and holiday ({holiday_ctx or 'general appeal'})."])
-                                item_category_for_prompt = data_item.get('itemCategory', 'N/A'); base_hashtags = caption_structure['baseHashtags']; hashtag_details = [f"product-specific for '{data_item['itemProduct']}'"]
+                                prompt_list.extend([f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"", "\nCaption Requirements:", "- Unique, engaging, ready for social media.",
+                                                    # MODIFIED PROMPT REQUIREMENT FOR PRICE ASSOCIATION
+                                                    f"- Feature the product on sale by stating its name (and brand like '{detected_brands}' if relevant and not 'N/A') immediately followed by or closely linked to its price. For example: '{temp_product_display_text} is now {final_price}!'. Also, clearly include the sale dates (as per 'display_dates'), and the store location.",
+                                                    f"- Incorporate relevant emojis for product, tone, and holiday ({holiday_ctx or 'general appeal'})."])
+                                item_category_for_prompt = data_item.get('itemCategory', 'N/A'); base_hashtags = caption_structure['baseHashtags']; hashtag_details = [f"product-specific for '{product_display_text}'"] # Use original product_display_text
                                 if item_category_for_prompt.lower() not in ['n/a', 'not found', '', 'general grocery']: hashtag_details.append(f"category '{item_category_for_prompt}'")
                                 prompt_list.append(f"- Include these base hashtags: {base_hashtags}. Add 2-3 creative hashtags. Also, 1-2 hashtags for each: {', '.join(hashtag_details)}.")
                                 prompt_list.extend([f"- Store's main name ({caption_structure['name'].split('(')[0].strip()}) should be prominent if location \"{caption_structure['location']}\" is just a city/area.", "- Good formatting with line breaks."])
@@ -552,8 +566,8 @@ def main():
             st.markdown("---")
 
     # --- Footer Text ---
-    else: # Corresponds to: if st.session_state.uploaded_files_info (for action buttons and previews) / if st.session_state.analyzed_image_data_set (for results)
-        if not st.session_state.is_analyzing_images and not st.session_state.uploaded_files_info: # Show only if truly idle and no files
+    else: 
+        if not st.session_state.is_analyzing_images and not st.session_state.uploaded_files_info:
             st.info("☝️ Upload some images of grocery sale ads to get started, or add a new store definition via the sidebar!")
 
 if __name__ == "__main__":
