@@ -533,7 +533,7 @@ def main():
                 caption_loading_key = f"{item_key_prefix}_caption_loading"
                 if caption_loading_key not in st.session_state: st.session_state[caption_loading_key] = False
 
-                if st.button(f"✍️ Generate Caption for this Item", key=f"{item_key_prefix}_gen_btn", disabled=st.session_state[caption_loading_key] or st.session_state.is_batch_generating_captions, type="secondary", use_container_width=True):
+                if st.button(f"Generate Caption for this Item", key=f"{item_key_prefix}_gen_btn", disabled=st.session_state[caption_loading_key] or st.session_state.is_batch_generating_captions, type="secondary", use_container_width=True):
                     st.session_state[caption_loading_key] = True
                     data_item['generatedCaption'] = "" 
                     
