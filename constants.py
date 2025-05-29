@@ -17,6 +17,20 @@ INITIAL_BASE_CAPTIONS = {
     'INTERNATIONAL_FRESH_MARKET': {
         'THREE_DAY_SALE': {'id': 'ifm_3_day', 'name': "International Fresh Market (3 Day Sale)", 'language': "english", 'original_example': "3 DAY SALE\n 05/13 - 05/15\n Fresh Zucchini 35¢ x lb.\n...", 'defaultProduct': "Fresh Zucchini", 'defaultPrice': "35¢ x lb.", 'dateFormat': "MM/DD - MM/DD", 'durationTextPattern': "3 DAY SALE", 'location': "International Fresh Market, Naperville", 'baseHashtags': "#Naperville #Fresh #Market #Produce #Meat #internationalfreshmarket"},
         'CUSTOMER_APPRECIATION_SALE': {'id': 'ifm_customer_appreciation', 'name': "International Fresh Market (Customer Appreciation Sale)", 'language': "english", 'original_example': "CUSTOMER APPRECIATION SALE \n Fresh Green Cabbage 25¢ x lb.\n4 Days Only 05/09-05/12\n...", 'defaultProduct': "Fresh Green Cabbage", 'defaultPrice': "25¢ x lb.", 'dateFormat': "MM/DD-MM/DD", 'durationTextPattern': "4 Days Only", 'location': "International Fresh Market, Naperville", 'baseHashtags': "#Naperville #Fresh #Market #Produce #Meat #internationalfreshmarket"}
+    },
+    'SAMS_FODS_SUPERMARKET': {
+        'WEEKLY_SPECIALS': {
+            'id': 'samsfods_weekly',
+            'name': "Sams Fods Supermarket (Weekly Specials)",
+            'language': "english",
+            'original_example': "Beef Chuck Roast Steak $4.85 x lb.\n Pricing 05/28-06/03\n1805 Dairy Ave. Corcoran, CA.",
+            'defaultProduct': "Beef Chuck Roast Steak",
+            'defaultPrice': "$4.85 x lb.",
+            'dateFormat': "MM/DD-MM/DD",
+            'durationTextPattern': "Pricing",
+            'location': "1805 Dairy Ave. Corcoran, CA.",
+            'baseHashtags': "#SamsFods #Supermarket #CorcoranCA #GroceryDeals #WeeklySpecials #MeatDeals #BeefRoast #ShopLocal"
+        }
     }
 }
 TONE_OPTIONS = [{'value': "Simple", 'label': "Simple & Clear"}, {'value': "Fun", 'label': "Fun & Engaging"}, {'value': "Excited", 'label': "Excited & Urgent"}, {'value': "Professional", 'label': "Professional & Direct"}, {'value': "Friendly", 'label': "Friendly & Warm"}, {'value': "Informative", 'label': "Informative & Detailed"}, {'value': "Humorous", 'label': "Humorous & Witty"}, {'value': "Seasonal", 'label': "Seasonal / Festive"}, {'value': "Elegant", 'label': "Elegant & Refined"}, {'value': "Bold", 'label': "Bold & Punchy"}, {'value': "Nostalgic", 'label': "Nostalgic & Heartfelt"}]
