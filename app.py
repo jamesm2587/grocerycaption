@@ -220,7 +220,7 @@ def load_custom_ui():
 # --- Video Helper Functions ---
 def get_video_thumbnail(video_bytes):
     """Extracts the first frame of a video and returns it as JPG bytes."""
-    try;
+    try:
         # OpenCV needs a file path to read from, so we use a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video_file:
             temp_video_file.write(video_bytes)
