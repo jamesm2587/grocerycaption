@@ -71,7 +71,6 @@ def load_custom_ui():
              /* Secondary Button (e.g., Remove, Generate for item) */
             div[data-testid="stButton"] > button[kind="secondary"] {
                 border-color: #4A4D56; /* A slightly lighter border than darkest background */
-                /* color: #FAFAFA; textColor from theme */
             }
             div[data-testid="stButton"] > button[kind="secondary"]:hover {
                 border-color: #6c5ce7; /* primaryColor on hover */
@@ -97,35 +96,71 @@ def load_custom_ui():
             }
 
             /* --- Expander in Sidebar --- */
-            div[data-testid="stExpander"] {
+            div[data-testid="stSidebar"] div[data-testid="stExpander"] { /* Target expander in sidebar specifically */
                  border: 1px solid #2a2d34;
                  border-radius: 8px;
                  background-color: #262730; /* secondaryBackgroundColor */
+                 margin-bottom: 1rem; /* Add some space below sidebar expanders */
             }
-            div[data-testid="stExpander"] summary { /* Expander header */
+            div[data-testid="stSidebar"] div[data-testid="stExpander"] summary { /* Expander header */
                 font-weight: 600;
                 color: #FAFAFA; /* textColor */
             }
+            
+            /* --- Expander in Main Content (File Previews) --- */
+            .main div[data-testid="stExpander"] {
+                 border: 1px solid #2a2d34;
+                 border-radius: 8px;
+                 background-color: #1a1c22; /* Slightly darker for main content expanders */
+                 margin-bottom: 1.5rem;
+            }
+            .main div[data-testid="stExpander"] summary {
+                font-weight: 600;
+                color: #FAFAFA;
+                padding: 0.5rem 0rem; /* Add some padding to summary */
+            }
+            .main div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {
+                padding-top: 1rem; /* Space between summary and content */
+            }
+
 
             /* --- BORDERED CONTAINERS / CARDS for individual items --- */
              div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div {
-                background-color: #1a1c22; /* Darker than secondary for card effect */
+                background-color: #1a1c22; 
                 border-radius: 12px;
-                box-shadow: 0 8px 16px rgba(0,0,0,0.3); /* Softer shadow */
-                border: 1px solid #2a2d34; /* Subtle border */
-                /* padding: 1rem; /* Add padding inside the card if needed */
+                box-shadow: 0 8px 16px rgba(0,0,0,0.3); 
+                border: 1px solid #2a2d34; 
+                padding: 1.5rem; /* Added more padding inside the card */
+                margin-bottom: 1.5rem; /* Space between cards */
+            }
+            
+            /* --- Form Elements Spacing within Cards --- */
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stTextInput,
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stTextArea,
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stSelectbox,
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stDateInput,
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stCheckbox {
+                margin-bottom: 1rem; /* Consistent bottom margin for form elements */
+            }
+
+            /* --- Labels for Form Elements --- */
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div label {
+                margin-bottom: 0.3rem; /* Space between label and input */
+                display: inline-block; /* Allows margin-bottom to work as expected */
+                font-weight: 500; /* Slightly less bold than headers */
             }
             
             /* --- Text Input & Text Area --- */
             .stTextInput input, .stTextArea textarea {
                 border-radius: 8px !important;
                 border: 1px solid #4A4D56 !important;
-                background-color: #262730 !important; /* secondaryBackgroundColor */
-                color: #FAFAFA !important; /* textColor */
+                background-color: #262730 !important; 
+                color: #FAFAFA !important; 
+                padding: 0.5rem 0.75rem !important; /* Adjust padding for input fields */
             }
             .stTextInput input:focus, .stTextArea textarea:focus {
-                border-color: #6c5ce7 !important; /* primaryColor on focus */
-                box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25) !important; /* primaryColor shadow */
+                border-color: #6c5ce7 !important; 
+                box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25) !important; 
             }
             
             /* --- Selectbox --- */
@@ -133,6 +168,8 @@ def load_custom_ui():
                 border-radius: 8px !important;
                 border: 1px solid #4A4D56 !important;
                 background-color: #262730 !important;
+                padding-top: 2px !important; /* Fine-tune selectbox padding */
+                padding-bottom: 2px !important;
             }
              .stSelectbox > div[data-baseweb="select"] > div:focus-within {
                  border-color: #6c5ce7 !important;
@@ -144,6 +181,7 @@ def load_custom_ui():
                  border-radius: 8px !important;
                  border: 1px solid #4A4D56 !important;
                  background-color: #262730 !important;
+                 padding: 0.5rem 0.75rem !important; /* Adjust padding */
             }
             .stDateInput input:focus {
                  border-color: #6c5ce7 !important;
@@ -153,15 +191,25 @@ def load_custom_ui():
             /* --- Checkbox --- */
             .stCheckbox label {
                 font-size: 1rem;
+                padding-top: 0.25rem; /* Align checkbox label better */
             }
             
             /* Style for st.video to make it fit container width */
             .stVideo {
                 width: 100%;
+                margin-bottom: 0.5rem; /* Space below video in preview grid */
             }
             .stVideo video {
                 width: 100%;
-                border-radius: 8px; /* Optional: if you want rounded corners on video player */
+                border-radius: 8px; 
+            }
+            
+            /* Specific Spacing for Two-Column Date Inputs */
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div [data-testid="stHorizontalBlock"] .stDateInput {
+                 margin-bottom: 0; /* Remove bottom margin if they are side-by-side */
+            }
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div [data-testid="stHorizontalBlock"] {
+                 margin-bottom: 1rem; /* Ensure the row of date pickers has overall margin */
             }
 
 
@@ -172,7 +220,7 @@ def load_custom_ui():
 # --- Video Helper Functions ---
 def get_video_thumbnail(video_bytes):
     """Extracts the first frame of a video and returns it as JPG bytes."""
-    try:
+    try
         # OpenCV needs a file path to read from, so we use a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video_file:
             temp_video_file.write(video_bytes)
@@ -465,7 +513,7 @@ def main():
                             st.rerun() 
 
         st.markdown("---")
-        st.caption(f"Caption Gen v4.1 // {datetime.date.today().strftime('%Y-%m-%d')}")
+        st.caption(f"Caption Gen v4.2 // {datetime.date.today().strftime('%Y-%m-%d')}")
 
 
     # --- File Uploader ---
@@ -495,16 +543,12 @@ def main():
                     else:
                         file_info_dict['display_thumbnail_bytes'] = file_bytes 
                     
-                    # Ensure display_thumbnail_bytes is not None for videos (could happen if get_video_thumbnail fails)
                     if file_info_dict['display_thumbnail_bytes'] is None and 'video' in uploaded_file.type:
                         st.warning(f"Could not generate thumbnail for video '{uploaded_file.name}'. It will not be shown in the details section but can still be analyzed.")
-                        # We can still add the file for analysis, but the details card won't have an image.
-                        # Or, decide to skip it entirely if thumbnail is mandatory for your flow.
-                        # For now, let's allow it to be added.
                         new_files_info.append(file_info_dict) 
-                    elif file_info_dict['display_thumbnail_bytes'] is not None : # For images or successful video thumbnails
+                    elif file_info_dict['display_thumbnail_bytes'] is not None : 
                          new_files_info.append(file_info_dict)
-                    else: # Should not happen if it's an image.
+                    else: 
                         st.warning(f"Could not process and display '{uploaded_file.name}'. File skipped.")
 
 
@@ -534,7 +578,7 @@ def main():
         action_cols[1].button("🗑️ Remove All & Clear Data", key="remove_all_images_button", on_click=handle_remove_all_images, use_container_width=True, type="secondary")
         
         with st.expander("Show Uploaded File Previews", expanded=True): 
-            previews_per_row = 4 # Adjusted for potentially wider video players
+            previews_per_row = 4 
             for i in range(0, len(st.session_state.uploaded_files_info), previews_per_row):
                 cols = st.columns(previews_per_row)
                 row_files_batch = st.session_state.uploaded_files_info[i : i + previews_per_row]
@@ -542,11 +586,11 @@ def main():
                     actual_file_index = i + j 
                     with cols[j]:
                         if 'video' in file_info['type']:
-                            st.video(file_info['bytes']) # Play the original video bytes
-                            st.caption(file_info['name']) # Add caption below video
-                        elif file_info['display_thumbnail_bytes']: # Check if image bytes are available
+                            st.video(file_info['bytes']) 
+                            st.caption(file_info['name']) 
+                        elif file_info['display_thumbnail_bytes']: 
                             st.image(file_info['display_thumbnail_bytes'], caption=file_info['name'], use_container_width=True)
-                        else: # Fallback if for some reason display_thumbnail_bytes is None (e.g. failed video thumb and it wasn't an image)
+                        else: 
                             st.caption(f"{file_info['name']} (Preview not available)")
 
                         st.button("❌ Remove", key=f"remove_btn_{actual_file_index}_{file_info['name']}", on_click=remove_file_at_index, args=(actual_file_index,), use_container_width=True, type="secondary")
@@ -570,7 +614,7 @@ def main():
                 analysis_data_item = {
                     "id": f"file-{file_info['name']}-{idx}", 
                     "original_filename": file_info['name'],
-                    "image_bytes_for_preview": file_info['display_thumbnail_bytes'], # Use the static thumbnail here
+                    "image_bytes_for_preview": file_info['display_thumbnail_bytes'], 
                     "itemProduct": "", "itemCategory": "N/A",
                     "detectedBrands": "N/A", "selectedStoreKey": st.session_state.global_selected_store_key, 
                     "selectedPriceFormat": PREDEFINED_PRICES[1]['value'] if PREDEFINED_PRICES and len(PREDEFINED_PRICES) > 1 else (PREDEFINED_PRICES[0]['value'] if PREDEFINED_PRICES else "CUSTOM"),
