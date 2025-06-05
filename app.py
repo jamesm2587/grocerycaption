@@ -7,6 +7,11 @@ from streamlit.components.v1 import html as st_html_component
 import html as html_escaper
 import copy
 import json
+import os
+import tempfile
+import cv2
+import numpy as np
+
 
 # Local imports
 from config import VISION_MODEL, TEXT_MODEL
@@ -18,6 +23,93 @@ from utils import (
 from gemini_services import analyze_image_with_gemini, generate_caption_with_gemini, extract_field, IMAGE_ANALYSIS_PROMPT_TEMPLATE
 
 CUSTOM_STORES_FILE = "custom_stores.json"
+
+# --- NEW Video Helper Functions ---
+
+def get_video_thumbnail(video_bytes):
+    """Extracts the first frame of a video and returns it as JPG bytes."""
+    try:
+        # OpenCV needs a file path to read from, so we use a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video_file:
+            temp_video_file.write(video_bytes)
+            video_filename = temp_video_file.name
+
+        cap = cv2.VideoCapture(video_filename)
+        success, frame = cap.read()
+        cap.release()
+        os.unlink(video_filename)  # Clean up the temporary file
+
+        if success:
+            is_success, buffer = cv2.imencode(".jpg", frame)
+            if is_success:
+                return buffer.tobytes()
+    except Exception as e:
+        st.warning(f"Could not generate video thumbnail: {e}")
+    return None # Return None if thumbnail generation fails
+
+def analyze_video_frames(vision_model, video_bytes, prompt):
+    """
+    Analyzes frames from a video using Gemini, scores each analysis,
+    and returns the analysis text from the frame with the best score.
+    """
+    # Use a temporary file for OpenCV
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_video_file:
+        temp_video_file.write(video_bytes)
+        video_filename = temp_video_file.name
+
+    cap = cv2.VideoCapture(video_filename)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    if not fps or fps <= 0:
+        fps = 30  # Assume a default FPS if it's not available
+
+    # Sample one frame per second
+    frame_interval = int(fps)
+    
+    best_analysis_text = ""
+    max_score = -1
+    analyzed_frames = 0
+
+    frame_count = 0
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        
+        # Process frame if it's at the desired interval
+        if frame_count % frame_interval == 0:
+            is_success, buffer = cv2.imencode(".jpg", frame)
+            if is_success:
+                frame_bytes = buffer.tobytes()
+                try:
+                    analysis_text = analyze_image_with_gemini(vision_model, frame_bytes, prompt)
+                    analyzed_frames += 1
+                    
+                    # Score the analysis based on how many key fields are filled
+                    score = 0
+                    if extract_field(r"^Product Name: (.*)$", analysis_text, default="Not found") != "Not found": score += 2 # Prioritize product name
+                    if extract_field(r"^Price: (.*)$", analysis_text, default="Not found") != "Not found": score += 2 # and price
+                    if extract_field(r"^Sale Dates: (.*)$", analysis_text, default="Not found") != "Not found": score += 1
+                    if extract_field(r"^Store Name: (.*)$", analysis_text, default="Not found") != "Not found": score += 1
+                    
+                    if score > max_score:
+                        max_score = score
+                        best_analysis_text = analysis_text
+                        # Early exit if we get a "perfect" score (all fields found)
+                        if max_score >= 6:
+                            break
+                except Exception as e:
+                    # Silently ignore frames that fail analysis to not interrupt the batch
+                    print(f"Frame analysis failed: {e}") 
+        
+        frame_count += 1
+        
+    cap.release()
+    os.unlink(video_filename)
+    
+    if not best_analysis_text:
+        raise Exception("Video analysis failed. No valid information could be extracted from the video frames.")
+        
+    return best_analysis_text
 
 # --- Callback function for removing an uploaded file ---
 def remove_file_at_index(index_to_remove):
@@ -32,16 +124,16 @@ def remove_file_at_index(index_to_remove):
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
             st.session_state.last_caption_by_store = {}
-            st.session_state.info_message_after_action = "All images and associated data have been cleared."
+            st.session_state.info_message_after_action = "All files and associated data have been cleared."
             st.session_state.uploader_key_suffix = st.session_state.get('uploader_key_suffix', 0) + 1
         elif 'analyzed_image_data_set' in st.session_state and st.session_state.analyzed_image_data_set:
             st.session_state.analyzed_image_data_set = []
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
             st.session_state.last_caption_by_store = {}
-            st.session_state.info_message_after_action = f"Image '{removed_file_name}' removed. Previous analysis and continuity references cleared. Please re-analyze remaining images."
+            st.session_state.info_message_after_action = f"File '{removed_file_name}' removed. Previous analysis and continuity references cleared. Please re-analyze remaining files."
         else:
-            st.session_state.info_message_after_action = f"Image '{removed_file_name}' removed."
+            st.session_state.info_message_after_action = f"File '{removed_file_name}' removed."
 
 
 # --- Callback function for removing all uploaded files and data ---
@@ -54,7 +146,7 @@ def handle_remove_all_images():
     st.session_state.is_analyzing_images = False
     st.session_state.is_batch_generating_captions = False
     st.session_state.error_message = ""
-    st.session_state.info_message_after_action = "All uploaded images and their associated data have been cleared."
+    st.session_state.info_message_after_action = "All uploaded files and their associated data have been cleared."
     st.session_state.uploader_key_suffix = st.session_state.get('uploader_key_suffix', 0) + 1
 
 
@@ -215,31 +307,50 @@ def main():
 
     # --- File Uploader ---
     uploaded_file_objects = st.file_uploader(
-        "Upload Image(s) of Grocery Sale Ads", type=["png", "jpg", "jpeg", "webp"],
+        "Upload Image(s) or Video(s) of Grocery Sale Ads",
+        type=["png", "jpg", "jpeg", "webp", "mp4", "mov", "avi"],
         accept_multiple_files=True, key=f"uploader_{st.session_state.get('uploader_key_suffix', 0)}"
     )
 
     if uploaded_file_objects:
         new_files_info = []
         existing_file_signatures = {(f_info['name'], len(f_info['bytes'])) for f_info in st.session_state.uploaded_files_info}
-        for uploaded_file in uploaded_file_objects:
-            file_bytes = uploaded_file.getvalue()
-            if (uploaded_file.name, len(file_bytes)) not in existing_file_signatures:
-                new_files_info.append({"name": uploaded_file.name, "type": uploaded_file.type, "bytes": file_bytes})
+        
+        with st.spinner("Processing new uploads..."):
+            for uploaded_file in uploaded_file_objects:
+                file_bytes = uploaded_file.getvalue()
+                if (uploaded_file.name, len(file_bytes)) not in existing_file_signatures:
+                    file_info_dict = {
+                        "name": uploaded_file.name, 
+                        "type": uploaded_file.type, 
+                        "bytes": file_bytes,
+                        "preview_bytes": None
+                    }
+
+                    if 'video' in uploaded_file.type:
+                        file_info_dict['preview_bytes'] = get_video_thumbnail(file_bytes)
+                    else:
+                        file_info_dict['preview_bytes'] = file_bytes
+                    
+                    if file_info_dict['preview_bytes']:
+                        new_files_info.append(file_info_dict)
+                    else:
+                        st.warning(f"Could not process and display '{uploaded_file.name}'. File skipped.")
+
         if new_files_info:
             st.session_state.uploaded_files_info.extend(new_files_info)
             st.session_state.analyzed_image_data_set = []
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
             st.session_state.last_caption_by_store = {}
-            st.session_state.info_message_after_action = f"{len(new_files_info)} new image(s) added. Analysis cleared."
+            st.session_state.info_message_after_action = f"{len(new_files_info)} new file(s) added. Analysis cleared."
             st.rerun()
 
-    # --- Action Buttons & Image Previews ---
+    # --- Action Buttons & File Previews ---
     if st.session_state.uploaded_files_info:
         action_cols = st.columns(2)
         analyze_button_disabled = st.session_state.is_analyzing_images or not st.session_state.uploaded_files_info
-        if action_cols[0].button("Analyze Uploaded Image(s)", disabled=analyze_button_disabled, type="primary", use_container_width=True):
+        if action_cols[0].button("Analyze Uploaded File(s)", disabled=analyze_button_disabled, type="primary", use_container_width=True):
             st.session_state.is_analyzing_images = True
             st.session_state.analyzed_image_data_set = []
             st.session_state.error_message = ""
@@ -250,7 +361,7 @@ def main():
         action_cols[1].button("🗑️ Remove All & Clear Data", key="remove_all_images_button", on_click=handle_remove_all_images, use_container_width=True, type="secondary")
         st.markdown("---")
 
-        st.subheader("Uploaded Image Previews:")
+        st.subheader("Uploaded File Previews:")
         previews_per_row = 5
         for i in range(0, len(st.session_state.uploaded_files_info), previews_per_row):
             cols = st.columns(previews_per_row)
@@ -258,14 +369,14 @@ def main():
             for j, file_info in enumerate(row_files_batch):
                 actual_file_index = i + j
                 with cols[j]:
-                    st.image(file_info['bytes'], caption=file_info['name'], use_container_width=True)
+                    st.image(file_info['preview_bytes'], caption=file_info['name'], use_container_width=True)
                     st.button("❌ Remove", key=f"remove_btn_{actual_file_index}_{file_info['name']}", on_click=remove_file_at_index, args=(actual_file_index,), use_container_width=True, type="secondary")
             for k_empty in range(len(row_files_batch), previews_per_row): cols[k_empty].container(height=50)
         st.markdown("---")
 
-    # --- Image Analysis Logic ---
+    # --- File Analysis Logic ---
     if st.session_state.is_analyzing_images and st.session_state.uploaded_files_info:
-        with st.spinner("Analyzing images... This may take a few moments."):
+        with st.spinner("Analyzing files... This may take a few moments. Videos can take longer."):
             progress_bar = st.progress(0)
             total_files = len(st.session_state.uploaded_files_info)
             temp_analysis_results = []
@@ -275,8 +386,8 @@ def main():
                 progress_bar.text(progress_text) 
                 progress_bar.progress((idx + 1) / total_files)
                 analysis_data_item = {
-                    "id": f"image-{file_info['name']}-{idx}", "original_filename": file_info['name'],
-                    "image_bytes_for_preview": file_info['bytes'], "itemProduct": "", "itemCategory": "N/A",
+                    "id": f"file-{file_info['name']}-{idx}", "original_filename": file_info['name'],
+                    "image_bytes_for_preview": file_info['preview_bytes'], "itemProduct": "", "itemCategory": "N/A",
                     "detectedBrands": "N/A", "selectedStoreKey": st.session_state.global_selected_store_key,
                     "selectedPriceFormat": PREDEFINED_PRICES[1]['value'] if PREDEFINED_PRICES and len(PREDEFINED_PRICES) > 1 else (PREDEFINED_PRICES[0]['value'] if PREDEFINED_PRICES else "CUSTOM"),
                     "itemPriceValue": "", "customItemPrice": "",
@@ -284,7 +395,14 @@ def main():
                     "generatedCaption": "", "analysisError": "", "batch_selected": False
                 }
                 try:
-                    analysis_text = analyze_image_with_gemini(VISION_MODEL, file_info['bytes'], current_image_analysis_prompt)
+                    analysis_text = ""
+                    file_type = file_info.get('type', '')
+
+                    if 'video' in file_type:
+                        analysis_text = analyze_video_frames(VISION_MODEL, file_info['bytes'], current_image_analysis_prompt)
+                    else: # It's an image
+                        analysis_text = analyze_image_with_gemini(VISION_MODEL, file_info['bytes'], current_image_analysis_prompt)
+
                     analysis_data_item['itemProduct'] = extract_field(r"^Product Name: (.*)$", analysis_text, default="Unknown Product")
                     analysis_data_item['itemCategory'] = extract_field(r"^Product Category: (.*)$", analysis_text, default="General Grocery")
                     analysis_data_item['detectedBrands'] = extract_field(r"^Detected Brands/Logos: (.*)$", analysis_text, default="N/A")
@@ -350,7 +468,7 @@ def main():
             st.session_state.analyzed_image_data_set_source_length = len(st.session_state.uploaded_files_info)
             progress_bar.empty()
             st.session_state.is_analyzing_images = False
-            st.success(f"✅ Image analysis complete for {len(temp_analysis_results)} image(s). Review below.")
+            st.success(f"✅ File analysis complete for {len(temp_analysis_results)} file(s). Review below.")
             st.rerun()
 
     # --- Batch Caption Generation ---
@@ -436,13 +554,13 @@ def main():
     if st.session_state.analyzed_image_data_set:
         if not st.session_state.is_batch_generating_captions and st.session_state.uploaded_files_info :
             st.markdown("---")
-            st.header("Image Details & Caption Generation")
+            st.header("File Details & Caption Generation")
         for index, data_item_proxy in enumerate(st.session_state.analyzed_image_data_set):
             item_key_prefix = f"item_{data_item_proxy['id']}"
             data_item = st.session_state.analyzed_image_data_set[index]
             with st.container(border=True):
                 data_item['batch_selected'] = st.checkbox("Select for Batch Generation", value=data_item.get('batch_selected', False), key=f"{item_key_prefix}_batch_select")
-                st.markdown(f"##### Image: **{data_item.get('original_filename', data_item['id'])}**")
+                st.markdown(f"##### File: **{data_item.get('original_filename', data_item['id'])}**")
                 if data_item.get('analysisError'): st.warning(f"💡 Notes/Errors: {data_item['analysisError']}")
                 col1, col2 = st.columns([1, 2])
                 with col1: st.image(data_item['image_bytes_for_preview'], use_container_width=True)
@@ -568,7 +686,7 @@ def main():
     # --- Footer Text ---
     else: 
         if not st.session_state.is_analyzing_images and not st.session_state.uploaded_files_info:
-            st.info("☝️ Upload some images of grocery sale ads to get started, or add a new store definition via the sidebar!")
+            st.info("☝️ Upload some images or videos of grocery sale ads to get started, or add a new store definition via the sidebar!")
 
 if __name__ == "__main__":
     main()
