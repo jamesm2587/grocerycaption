@@ -3,3 +3,4 @@ python-dotenv
 google-generativeai
 Pillow
 python-dateutil
+opencv-python-headless
