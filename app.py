@@ -1040,4 +1040,5 @@ def exec_single_item_generation(index):
 
 
 if __name__ == "__main__":
-    mai
+    main()
+"
