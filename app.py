@@ -629,7 +629,7 @@ def main():
                     else: 
                         analysis_text = analyze_image_with_gemini(VISION_MODEL, file_info['bytes'], current_image_analysis_prompt)
 
-                    analysis_data_item['itemProduct'] = extract_field(r"^Product Name: (.*)$", analysis_text, default="Unknown Product")
+                    analysis_data_item['itemProduct'] = extract_field(r"^Product Name: (.*)$", analysis_text, default="Unknown Product").title()
                     analysis_data_item['itemCategory'] = extract_field(r"^Product Category: (.*)$", analysis_text, default="General Grocery")
                     analysis_data_item['detectedBrands'] = extract_field(r"^Detected Brands/Logos: (.*)$", analysis_text, default="N/A")
 
