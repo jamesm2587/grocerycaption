@@ -1,6 +1,32 @@
 # constants.py
 
 INITIAL_BASE_CAPTIONS = {
+    'LA_HACIENDA_MARKET': {
+        'GENERAL_STOCK': {
+            'id': 'lahacienda_stock',
+            'name': "La Hacienda Market (General Stock)", 
+            'language': "spanish", 
+            'original_example': "¡Visítanos en La Hacienda Market! Tenemos burritos, quesadillas, y tacos recién hechos, y la carne y verdura más fresca. ¡Todo lo que necesitas para tu comida!",
+            'defaultProduct': "Prepared Foods (Burritos, Tacos, etc.)",
+            'defaultPrice': "", # Price is not the focus
+            'dateFormat': "", # No sale dates needed
+            'durationTextPattern': "",
+            'location': "La Hacienda Market",
+            'baseHashtags': "#LaHaciendaMarket #ComidaMexicana #HechoEnCasa #Burritos #Tacos #Quesadillas #Menudo #CarneFresca #VerdurasFrescas #ShopLocal"
+        },
+        'MENUDO_WEEKEND': {
+            'id': 'lahacienda_menudo',
+            'name': "La Hacienda Market (Menudo Weekend)", 
+            'language': "spanish", 
+            'original_example': "¡Ya es fin de semana y el cuerpo pide Menudo! Ven a La Hacienda Market por tu plato, calientito y con todo el sabor casero. ¡No te quedes con el antojo!",
+            'defaultProduct': "Menudo Fresco",
+            'defaultPrice': "", # Price is often variable or not the focus
+            'dateFormat': "", # Assumed to be weekend, no specific dates
+            'durationTextPattern': "Fin de Semana", # Implies weekend
+            'location': "La Hacienda Market",
+            'baseHashtags': "#Menudo #FinDeSemana #LaHaciendaMarket #SaborCasero #ComidaMexicana #MenudoTime #AntojoCumplido #Finde"
+        }
+    },
     'TEDS_FRESH_MARKET': {
         'THREE_DAY': {'id': 'teds_3_day', 'name': "Ted's Fresh Market (3-Day Sale)", 'language': "english", 'original_example': "Fresh Eggplant or Broccoli 79¢ x lb.\n3 DAYS ONLY 05/13-05/15\n2840 W. Devon Ave.\n...", 'defaultProduct': "Fresh Eggplant or Broccoli", 'defaultPrice': "79¢ x lb.", 'dateFormat': "MM/DD-MM/DD", 'durationTextPattern': "3 DAYS ONLY", 'location': "2840 W. Devon Ave.", 'baseHashtags': "#Sale #ShopLocal #Fresh #Groceries #Produce #USDA #Halal #TedsFreshMarket #GroceryDeals #WeeklyDeals #FreshProduce"},
         'FOUR_DAY': {'id': 'teds_4_day', 'name': "Ted's Fresh Market (4-Day Sale)", 'language': "english", 'original_example': "Sweet Minneola Orange 89¢ x lb.\n4 DAYS ONLY 05/09-05/12\n2840 W. Devon Ave.\n...", 'defaultProduct': "Sweet Minneola Oranges", 'defaultPrice': "89¢ x lb.", 'dateFormat': "MM/DD-MM/DD", 'durationTextPattern': "4 DAYS ONLY", 'location': "2840 W. Devon Ave.", 'baseHashtags': "#Sale #ShopLocal #Fresh #Groceries #Produce #USDA #Halal #TedsFreshMarket #GroceryDeals #WeeklyDeals #CitrusLove"}
