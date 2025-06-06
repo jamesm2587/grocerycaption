@@ -402,7 +402,7 @@ def main():
     st.set_page_config(layout="wide", page_title="Caption Generator")
     load_custom_ui()  # Load the new UI styles at the very beginning
 
-    st.title("Fisher Printing Caption Generator")
+    st.title("✨ Social Media Caption Generator ✨")
     
     initialize_session_state() # Initialize session state variables
     current_combined_captions = get_combined_captions() # Get current combined captions data
@@ -870,6 +870,20 @@ def main():
         if not st.session_state.is_batch_generating_captions and st.session_state.uploaded_files_info : 
             st.markdown("---") 
             st.header("File Details & Caption Generation")
+
+            # --- Select/Deselect All Buttons ---
+            action_cols = st.columns(8)
+            if action_cols[0].button("Select All", use_container_width=True, key="select_all_btn"):
+                for item in st.session_state.analyzed_image_data_set:
+                    item['batch_selected'] = True
+                st.rerun()
+
+            if action_cols[1].button("Deselect All", use_container_width=True, key="deselect_all_btn"):
+                for item in st.session_state.analyzed_image_data_set:
+                    item['batch_selected'] = False
+                st.rerun()
+            st.markdown("<br>", unsafe_allow_html=True) 
+            # --- End Select/Deselect All ---
 
         for index, data_item_proxy in enumerate(st.session_state.analyzed_image_data_set): 
             item_key_prefix = f"item_{data_item_proxy['id']}" 
