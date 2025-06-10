@@ -26,20 +26,21 @@ CUSTOM_STORES_FILE = "custom_stores.json"
 
 # --- NEW UI Function ---
 def load_custom_ui():
-    """Injects custom CSS for a dark, legible glassmorphic UI with accessible buttons."""
+    """Injects custom CSS for a dark, legible glassmorphic UI with highly accessible buttons."""
     st.markdown("""
         <style>
             /* --- 1. GENERAL & BACKGROUND --- */
             .stApp {
-                background-color: #0E1117; /* A dark, neutral background */
+                background-color: #0E1117; /* A dark, professional, and neutral background */
             }
             .main .block-container {
+                /* Padding is preserved as requested */
                 padding-top: 2rem;
                 padding-bottom: 2rem;
             }
             h1, h2, h3, h4, h5, h6, .stMarkdown p, .stCaptionContainer p, .stCheckbox label {
-                color: #FFFFFF; /* White text for high contrast and legibility */
-                text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+                color: #FFFFFF; /* Ensures all primary text is white for high contrast */
+                text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Adds subtle depth for better legibility */
             }
             h1 {
                 text-align: center;
@@ -48,13 +49,12 @@ def load_custom_ui():
 
             /* --- 2. CORE GLASSMORPHIC STYLE (FOR CARDS & SIDEBAR) --- */
             .glass-element {
-                background: rgba(40, 43, 54, 0.65); /* Dark, semi-transparent base */
+                background: rgba(40, 43, 54, 0.65); /* A dark, semi-transparent base for the glass effect */
                 backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px); /* Safari support */
                 border-radius: 16px;
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-                padding: 1.5rem;
+                border: 1px solid rgba(255, 255, 255, 0.15); /* A subtle border to define the element */
+                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); /* A soft shadow to lift the element off the background */
             }
 
             /* --- 3. APPLYING THE STYLE TO STREAMLIT ELEMENTS --- */
@@ -67,7 +67,7 @@ def load_custom_ui():
                 border-radius: 16px;
                 border: 1px solid rgba(255, 255, 255, 0.15);
                 box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-                padding: 1.5rem;
+                padding: 1.5rem; /* Padding preserved */
                 margin-bottom: 1.5rem;
             }
             
@@ -99,9 +99,6 @@ def load_custom_ui():
                 border: 2px dashed rgba(255, 255, 255, 0.2);
                 border-radius: 16px;
             }
-            div[data-testid="stFileUploader"] label {
-                color: #FFFFFF;
-            }
 
             /* --- 4. ACCESSIBLE & STYLISH BUTTONS --- */
             
@@ -110,36 +107,35 @@ def load_custom_ui():
                 font-weight: 600;
                 transition: all 0.2s ease-in-out;
                 color: #FFFFFF;
-                border: 1px solid transparent; /* Start with a transparent border */
+                border: none; /* Removed default border to build custom styles */
             }
 
-            /* Primary Button - High Contrast & Solid */
+            /* Primary Button - Solid, high-contrast for key actions */
             div[data-testid="stButton"] > button[kind="primary"] {
-                 background-color: #6c5ce7; /* Solid, vibrant color */
-                 border: none;
+                 background-color: #6c5ce7; /* A solid, vibrant color stands out against the dark bg */
             }
             div[data-testid="stButton"] > button[kind="primary"]:hover {
-                 background-color: #5848c7; /* Darken on hover */
-                 box-shadow: 0 0 12px #6c5ce7;
+                 background-color: #5848c7; /* A slightly darker shade for hover feedback */
+                 box-shadow: 0 0 12px #6c5ce7; /* A glow effect to indicate interaction */
             }
             div[data-testid="stButton"] > button[kind="primary"]:focus {
-                 box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.6); /* Focus ring */
+                 box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.6); /* A clear focus ring for accessibility */
             }
 
-            /* Secondary Button - Bright, Clear & Legible */
+            /* Secondary Button - Bright, clear, and legible */
             div[data-testid="stButton"] > button[kind="secondary"] {
-                background-color: rgba(255, 255, 255, 0.1);
+                background-color: rgba(255, 255, 255, 0.1); /* Brighter than the base glass for visibility */
                 border: 1px solid rgba(255, 255, 255, 0.2);
             }
             div[data-testid="stButton"] > button[kind="secondary"]:hover {
-                background-color: rgba(255, 255, 255, 0.2);
+                background-color: rgba(255, 255, 255, 0.2); /* Brighten on hover */
                 border-color: rgba(255, 255, 255, 0.3);
             }
              div[data-testid="stButton"] > button[kind="secondary"]:focus {
-                 box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+                 box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2); /* Clear focus ring */
             }
 
-            /* --- 5. FORM ELEMENTS --- */
+            /* --- 5. FORM & VISUAL ELEMENTS --- */
 
             .stTextInput input, .stTextArea textarea, .stDateInput input, .stSelectbox > div[data-baseweb="select"] > div {
                 border-radius: 12px !important;
@@ -152,7 +148,6 @@ def load_custom_ui():
                 box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.5) !important;
             }
 
-            /* --- 6. VISUALS --- */
             .stImage img, .stVideo video {
                 border-radius: 12px;
                 border: 1px solid rgba(255, 255, 255, 0.1);
