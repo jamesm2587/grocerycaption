@@ -26,35 +26,34 @@ CUSTOM_STORES_FILE = "custom_stores.json"
 
 # --- NEW UI Function ---
 def load_custom_ui():
-    """Injects custom CSS for a dark, legible glassmorphic UI."""
+    """Injects custom CSS for a dark, legible glassmorphic UI with accessible buttons."""
     st.markdown("""
         <style>
             /* --- 1. GENERAL & BACKGROUND --- */
             .stApp {
-                background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0iIzE4MTgyOCI+PC9yZWN0Pgo8Y2lyY2xlIGN4PSIxMCIgY3k9IjEwIiByPSIxIiBmaWxsPSJ2YXIoLS1zZWNvbmRhcnlCYWNrZ3JvdW5kQ29sb3IsICMyNzI5MzUpIj48L2NpcmNsZT4KPC9zdmc+);
-                background-attachment: fixed;
+                background-color: #0E1117; /* A dark, neutral background */
             }
             .main .block-container {
                 padding-top: 2rem;
                 padding-bottom: 2rem;
             }
-            h1, h2, h3, h4, h5, h6, .stMarkdown, .stCaptionContainer p, .stCheckbox label {
-                color: #FFFFFF; /* Ensure all text is white for legibility */
-                text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+            h1, h2, h3, h4, h5, h6, .stMarkdown p, .stCaptionContainer p, .stCheckbox label {
+                color: #FFFFFF; /* White text for high contrast and legibility */
+                text-shadow: 0 1px 2px rgba(0,0,0,0.5);
             }
             h1 {
                 text-align: center;
                 font-size: 2.8rem;
             }
 
-            /* --- 2. CORE GLASSMORPHIC STYLE --- */
+            /* --- 2. CORE GLASSMORPHIC STYLE (FOR CARDS & SIDEBAR) --- */
             .glass-element {
-                background: rgba(40, 43, 54, 0.6); /* Dark, semi-transparent base */
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px); /* For Safari */
+                background: rgba(40, 43, 54, 0.65); /* Dark, semi-transparent base */
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
                 border-radius: 16px;
                 border: 1px solid rgba(255, 255, 255, 0.15);
-                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
                 padding: 1.5rem;
             }
 
@@ -62,12 +61,12 @@ def load_custom_ui():
 
             /* Main Item Cards */
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div {
-                background: rgba(40, 43, 54, 0.6);
-                backdrop-filter: blur(12px);
-                -webkit-backdrop-filter: blur(12px);
+                background: rgba(40, 43, 54, 0.65);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
                 border-radius: 16px;
                 border: 1px solid rgba(255, 255, 255, 0.15);
-                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
                 padding: 1.5rem;
                 margin-bottom: 1.5rem;
             }
@@ -104,46 +103,57 @@ def load_custom_ui():
                 color: #FFFFFF;
             }
 
-            /* --- 4. FORM ELEMENTS & BUTTONS for Consistency --- */
-
-            /* Input Fields (Text, Text Area, Select, Date) */
-            .stTextInput input, .stTextArea textarea, .stDateInput input, .stSelectbox > div[data-baseweb="select"] > div {
-                border-radius: 12px !important;
-                border: 1px solid rgba(255, 255, 255, 0.2) !important;
-                background-color: rgba(0, 0, 0, 0.25) !important;
-                color: #FFFFFF !important;
-            }
-            .stTextInput input:focus, .stTextArea textarea:focus, .stSelectbox > div[data-baseweb="select"] > div:focus-within, .stDateInput input:focus {
-                border-color: rgba(108, 92, 231, 1) !important;
-                box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.5) !important;
-            }
-
-            /* Buttons */
+            /* --- 4. ACCESSIBLE & STYLISH BUTTONS --- */
+            
             .stButton > button {
                 border-radius: 12px;
                 font-weight: 600;
                 transition: all 0.2s ease-in-out;
-                border: 1px solid rgba(255, 255, 255, 0.2);
                 color: #FFFFFF;
+                border: 1px solid transparent; /* Start with a transparent border */
             }
+
+            /* Primary Button - High Contrast & Solid */
             div[data-testid="stButton"] > button[kind="primary"] {
-                 background-color: #6c5ce7; /* Keep primary color for important actions */
+                 background-color: #6c5ce7; /* Solid, vibrant color */
                  border: none;
             }
             div[data-testid="stButton"] > button[kind="primary"]:hover {
-                 background-color: #5848c7;
-                 box-shadow: 0 0 10px #6c5ce7;
+                 background-color: #5848c7; /* Darken on hover */
+                 box-shadow: 0 0 12px #6c5ce7;
             }
-            div[data-testid="stButton"] > button[kind="secondary"] {
-                background-color: rgba(255, 255, 255, 0.15);
-            }
-            div[data-testid="stButton"] > button[kind="secondary"]:hover {
-                background-color: rgba(255, 255, 255, 0.25);
-                border-color: rgba(255, 255, 255, 0.3);
+            div[data-testid="stButton"] > button[kind="primary"]:focus {
+                 box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.6); /* Focus ring */
             }
 
-            /* --- 5. VISUALS --- */
-            .stImage, .stVideo video {
+            /* Secondary Button - Bright, Clear & Legible */
+            div[data-testid="stButton"] > button[kind="secondary"] {
+                background-color: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            div[data-testid="stButton"] > button[kind="secondary"]:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+                border-color: rgba(255, 255, 255, 0.3);
+            }
+             div[data-testid="stButton"] > button[kind="secondary"]:focus {
+                 box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+            }
+
+            /* --- 5. FORM ELEMENTS --- */
+
+            .stTextInput input, .stTextArea textarea, .stDateInput input, .stSelectbox > div[data-baseweb="select"] > div {
+                border-radius: 12px !important;
+                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                background-color: rgba(0, 0, 0, 0.2) !important;
+                color: #FFFFFF !important;
+            }
+            .stTextInput input:focus, .stTextArea textarea:focus, .stSelectbox > div[data-baseweb="select"] > div:focus-within, .stDateInput input:focus {
+                border-color: #6c5ce7 !important;
+                box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.5) !important;
+            }
+
+            /* --- 6. VISUALS --- */
+            .stImage img, .stVideo video {
                 border-radius: 12px;
                 border: 1px solid rgba(255, 255, 255, 0.1);
             }
