@@ -54,6 +54,7 @@ IMAGE_ANALYSIS_PROMPT_TEMPLATE = (
     "Price: [Price of the primary product, including currency and unit, e.g., $1.99/lb, 2 for $5.00, 99¢ each]\n"
     "Sale Dates: [Sale period, e.g., MM/DD-MM/DD, Ends MM/DD, May 15-20. If year is present, include it.]\n"
     "Store Name: [Visible store name, if any]\n"
+    "Common Sense Check: [If a prominent logo (like a single letter) is visible and the full store name is also visible or partially visible, confirm that the logo logically matches the store name (e.g., a large 'R' logo corresponds to 'RRanch Market'). Use this to improve confidence in the store name identification.]\n"
     "Promotional Text: [Any other relevant promotional phrases or taglines, like '3 Days Only', 'Special Offer']\n"
     "Product Category: [General category like Produce, Dairy, Meat, Bakery, Pantry, Frozen, Beverages, Snacks, Household. If multiple distinct items, categorize the primary one or provide a comma-separated list if appropriate for a single ad item. Default to 'General Grocery' if unclear.]\n"
     "Detected Brands/Logos: [List any recognizable product brands or logos visible, e.g., Coca-Cola, Lay's. If none, state 'Not found'. Comma-separate if multiple.]\n"
