@@ -26,132 +26,192 @@ CUSTOM_STORES_FILE = "custom_stores.json"
 
 # --- NEW UI Function ---
 def load_custom_ui():
-    """Injects custom CSS for a dark, legible glassmorphic UI with accessible buttons."""
+    """Injects custom CSS for a more appealing UI."""
     st.markdown("""
         <style>
-            /* --- 1. GENERAL & BACKGROUND --- */
+            /* --- GENERAL --- */
             .stApp {
-                background-color: #0E1117; /* A dark, professional, and neutral background */
+                /* Theme is set in .streamlit/config.toml */
             }
             .main .block-container {
-                /* Padding is preserved as requested */
                 padding-top: 2rem;
                 padding-bottom: 2rem;
             }
-            h1, h2, h3, h4, h5, h6, .stMarkdown p, .stCaptionContainer p, .stCheckbox label {
-                color: #FFFFFF; /* Ensures all primary text is white for high contrast */
-                text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Adds subtle depth for better legibility */
+            h1, h2, h3, h4, h5, h6 {
+                font-weight: 600; /* Bolder headers */
             }
-            h1 {
+            
+            /* --- TITLE --- */
+            h1 { /* Main title style */
                 text-align: center;
-                font-size: 2.8rem;
+                font-size: 2.5rem; /* Adjusted for better visual hierarchy */
+                letter-spacing: -1px;
+                padding-bottom: 1rem;
+                border-bottom: 1px solid #2a2d34; /* Use a subtle border from your theme */
+                margin-bottom: 2rem; /* More space after title */
             }
 
-            /* --- 2. CORE GLASSMORPHIC STYLE (FOR CARDS & SIDEBAR) --- */
-            .glass-element {
-                background: rgba(40, 43, 54, 0.65); /* Dark, semi-transparent base for the glass effect */
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px); /* Safari support */
-                border-radius: 16px;
-                border: 1px solid rgba(255, 255, 255, 0.15); /* A subtle border to define the element */
-                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); /* A soft shadow to lift the element off the background */
-            }
-
-            /* --- 3. APPLYING THE STYLE TO STREAMLIT ELEMENTS --- */
-
-            /* Main Item Cards */
-            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div {
-                background: rgba(40, 43, 54, 0.65);
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
-                border-radius: 16px;
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-                padding: 1.5rem; /* Padding preserved */
-                margin-bottom: 1.5rem;
-            }
-            
-            /* Sidebar */
-            div[data-testid="stSidebar"] > div:first-child {
-                background: rgba(24, 24, 40, 0.7);
-                backdrop-filter: blur(15px);
-                -webkit-backdrop-filter: blur(15px);
-                border-right: 1px solid rgba(255, 255, 255, 0.1);
-            }
-
-            /* Expanders */
-            div[data-testid="stExpander"] {
-                border: none;
-                margin-bottom: 1rem;
-                background: rgba(50, 53, 64, 0.5);
-                border-radius: 16px;
-                border: 1px solid rgba(255, 255, 255, 0.1);
-            }
-            div[data-testid="stExpander"] summary {
-                font-weight: 600;
-                color: #FFFFFF;
-                padding: 0.8rem;
-            }
-            
-            /* File Uploader */
-            div[data-testid="stFileUploader"] {
-                background: transparent;
-                border: 2px dashed rgba(255, 255, 255, 0.2);
-                border-radius: 16px;
-            }
-
-            /* --- 4. ACCESSIBLE & STYLISH BUTTONS --- */
-            
+            /* --- BUTTONS --- */
             .stButton > button {
-                border-radius: 12px;
+                border-radius: 8px;
+                padding: 10px 20px;
                 font-weight: 600;
                 transition: all 0.2s ease-in-out;
-                color: #FFFFFF;
-                border: none; /* Removed default border to build custom styles */
+                border-width: 1px; /* Ensure border is visible for secondary */
             }
-
-            /* Primary Button - Solid, high-contrast for key actions */
+            /* Primary Button (e.g., Analyze) */
             div[data-testid="stButton"] > button[kind="primary"] {
-                 background-color: #6c5ce7; /* Solid, vibrant color stands out against the dark bg */
+                 background-color: #6c5ce7; /* primaryColor from theme */
+                 color: white;
+                 border: none; /* Primary buttons might not need a border if background is strong */
             }
             div[data-testid="stButton"] > button[kind="primary"]:hover {
-                 background-color: #5848c7; /* A slightly darker shade for hover feedback */
-                 box-shadow: 0 0 12px #6c5ce7; /* A glow effect to indicate interaction */
+                 background-color: #5848c7; /* Darker shade for hover */
             }
-            div[data-testid="stButton"] > button[kind="primary"]:focus {
-                 box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.6); /* A clear focus ring for accessibility */
-            }
-
-            /* Secondary Button - Bright, clear, and legible */
+             /* Secondary Button (e.g., Remove, Generate for item) */
             div[data-testid="stButton"] > button[kind="secondary"] {
-                background-color: rgba(255, 255, 255, 0.1); /* Brighter than the base glass for visibility */
-                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-color: #4A4D56; /* A slightly lighter border than darkest background */
             }
             div[data-testid="stButton"] > button[kind="secondary"]:hover {
-                background-color: rgba(255, 255, 255, 0.2); /* Brighten on hover */
-                border-color: rgba(255, 255, 255, 0.3);
-            }
-             div[data-testid="stButton"] > button[kind="secondary"]:focus {
-                 box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2); /* Clear focus ring */
+                border-color: #6c5ce7; /* primaryColor on hover */
+                color: #6c5ce7; /* primaryColor text on hover */
             }
 
-            /* --- 5. FORM & VISUAL ELEMENTS --- */
-
-            .stTextInput input, .stTextArea textarea, .stDateInput input, .stSelectbox > div[data-baseweb="select"] > div {
-                border-radius: 12px !important;
-                border: 1px solid rgba(255, 255, 255, 0.2) !important;
-                background-color: rgba(0, 0, 0, 0.2) !important;
-                color: #FFFFFF !important;
-            }
-            .stTextInput input:focus, .stTextArea textarea:focus, .stSelectbox > div[data-baseweb="select"] > div:focus-within, .stDateInput input:focus {
-                border-color: #6c5ce7 !important;
-                box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.5) !important;
-            }
-
-            .stImage img, .stVideo video {
+            /* --- FILE UPLOADER --- */
+            div[data-testid="stFileUploader"] {
+                border: 2px dashed #4A4D56; /* Dashed border */
+                background-color: #1a1c22; /* Darker than secondaryBg for contrast */
                 border-radius: 12px;
-                border: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 1.5rem;
             }
+            div[data-testid="stFileUploader"] label { /* Uploader label */
+                font-size: 1.1rem;
+                font-weight: 600;
+            }
+
+            /* --- SIDEBAR --- */
+            div[data-testid="stSidebar"] > div:first-child {
+                background-color: #1a1c22; /* Darker shade for sidebar */
+                border-right: 1px solid #2a2d34; /* Subtle separator */
+            }
+
+            /* --- Expander in Sidebar --- */
+            div[data-testid="stSidebar"] div[data-testid="stExpander"] { /* Target expander in sidebar specifically */
+                 border: 1px solid #2a2d34;
+                 border-radius: 8px;
+                 background-color: #262730; /* secondaryBackgroundColor */
+                 margin-bottom: 1rem; /* Add some space below sidebar expanders */
+            }
+            div[data-testid="stSidebar"] div[data-testid="stExpander"] summary { /* Expander header */
+                font-weight: 600;
+                color: #FAFAFA; /* textColor */
+            }
+            
+            /* --- Expander in Main Content (File Previews) --- */
+            .main div[data-testid="stExpander"] {
+                 border: 1px solid #2a2d34;
+                 border-radius: 8px;
+                 background-color: #1a1c22; /* Slightly darker for main content expanders */
+                 margin-bottom: 1.5rem;
+            }
+            .main div[data-testid="stExpander"] summary {
+                font-weight: 600;
+                color: #FAFAFA;
+                padding: 0.5rem 0rem; /* Add some padding to summary */
+            }
+            .main div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {
+                padding-top: 1rem; /* Space between summary and content */
+            }
+
+
+            /* --- BORDERED CONTAINERS / CARDS for individual items --- */
+             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div {
+                background-color: #1a1c22; 
+                border-radius: 12px;
+                box-shadow: 0 8px 16px rgba(0,0,0,0.3); 
+                border: 1px solid #2a2d34; 
+                padding: 1.5rem; /* Added more padding inside the card */
+                margin-bottom: 1.5rem; /* Space between cards */
+            }
+            
+            /* --- Form Elements Spacing within Cards --- */
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stTextInput,
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stTextArea,
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stSelectbox,
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stDateInput,
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stCheckbox {
+                margin-bottom: 1rem; /* Consistent bottom margin for form elements */
+            }
+
+            /* --- Labels for Form Elements --- */
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div label {
+                margin-bottom: 0.3rem; /* Space between label and input */
+                display: inline-block; /* Allows margin-bottom to work as expected */
+                font-weight: 500; /* Slightly less bold than headers */
+            }
+            
+            /* --- Text Input & Text Area --- */
+            .stTextInput input, .stTextArea textarea {
+                border-radius: 8px !important;
+                border: 1px solid #4A4D56 !important;
+                background-color: #262730 !important; 
+                color: #FAFAFA !important; 
+                padding: 0.5rem 0.75rem !important; /* Adjust padding for input fields */
+            }
+            .stTextInput input:focus, .stTextArea textarea:focus {
+                border-color: #6c5ce7 !important; 
+                box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25) !important; 
+            }
+            
+            /* --- Selectbox --- */
+            .stSelectbox > div[data-baseweb="select"] > div {
+                border-radius: 8px !important;
+                border: 1px solid #4A4D56 !important;
+                background-color: #262730 !important;
+                padding-top: 2px !important; /* Fine-tune selectbox padding */
+                padding-bottom: 2px !important;
+            }
+             .stSelectbox > div[data-baseweb="select"] > div:focus-within {
+                 border-color: #6c5ce7 !important;
+                 box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25) !important;
+             }
+
+            /* --- Date Input --- */
+            .stDateInput input {
+                 border-radius: 8px !important;
+                 border: 1px solid #4A4D56 !important;
+                 background-color: #262730 !important;
+                 padding: 0.5rem 0.75rem !important; /* Adjust padding */
+            }
+            .stDateInput input:focus {
+                 border-color: #6c5ce7 !important;
+                 box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25) !important;
+            }
+            
+            /* --- Checkbox --- */
+            .stCheckbox label {
+                font-size: 1rem;
+                padding-top: 0.25rem; /* Align checkbox label better */
+            }
+            
+            /* Style for st.video to make it fit container width */
+            .stVideo {
+                width: 100%;
+                margin-bottom: 0.5rem; /* Space below video in preview grid */
+            }
+            .stVideo video {
+                width: 100%;
+                border-radius: 8px; 
+            }
+            
+            /* Specific Spacing for Two-Column Date Inputs */
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div [data-testid="stHorizontalBlock"] .stDateInput {
+                 margin-bottom: 0; /* Remove bottom margin if they are side-by-side */
+            }
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div [data-testid="stHorizontalBlock"] {
+                 margin-bottom: 1rem; /* Ensure the row of date pickers has overall margin */
+            }
+
 
         </style>
     """, unsafe_allow_html=True)
@@ -219,7 +279,7 @@ def analyze_video_frames(vision_model, video_bytes, prompt):
                     # Score the analysis based on how many key fields are filled
                     score = 0
                     if extract_field(r"^Product Name: (.*)$", analysis_text, default="Not found") != "Not found": score += 2 # Prioritize product name
-                    if extract_field(r"^Full Price String: (.*)$", analysis_text, default="Not found") != "Not found": score += 2 # and price
+                    if extract_field(r"^Price: (.*)$", analysis_text, default="Not found") != "Not found": score += 2 # and price
                     if extract_field(r"^Sale Dates: (.*)$", analysis_text, default="Not found") != "Not found": score += 1
                     if extract_field(r"^Store Name: (.*)$", analysis_text, default="Not found") != "Not found": score += 1
                     
@@ -392,32 +452,32 @@ def main():
 
 
         # Add New Store Definition Form
-        with st.expander("➕ Add New Store Definition"):
+        with st.expander("➕ Add New Store Definition (Permanent)"): # Permanent implies saving to file
             with st.form("new_store_form", clear_on_submit=True):
-                st.caption("Define a new store and one sale type.")
+                st.caption("Define a new store and one sale type. Data is saved to custom_stores.json.")
                 
                 store_name_form = st.text_input("Store Name*", help="e.g., 'My Corner Shop'")
-                sale_type_key_form = st.text_input("Sale Type Key*", help="Uppercase identifier, e.g., 'WEEKLY'.")
-                sale_type_display_name_form = st.text_input("Sale Type Display Name*", help="e.g., 'Weekly Deals'")
+                sale_type_key_form = st.text_input("Sale Type Key*", help="Uppercase identifier, e.g., 'WEEKLY', 'SPECIAL'. No spaces/special chars except underscore.")
+                sale_type_display_name_form = st.text_input("Sale Type Display Name*", help="e.g., 'Weekly Deals'. Appears in parentheses.")
 
-                language_form = st.selectbox("Language*", ["english", "spanish"], key="new_store_lang_perm")
-                original_example_form = st.text_area("Original Example Caption*", height=100)
-                date_format_form = st.text_input("Date Format*", help="e.g., 'MM/DD-MM/DD'")
-                duration_text_pattern_form = st.text_input("Duration Text Pattern (Optional)")
+                language_form = st.selectbox("Language*", ["english", "spanish"], key="new_store_lang_perm") # Unique key for permanent
+                original_example_form = st.text_area("Original Example Caption*", height=100, help="A typical caption for this sale type.")
+                date_format_form = st.text_input("Date Format*", help="e.g., 'MM/DD-MM/DD'. Leave blank for non-sale posts.")
+                duration_text_pattern_form = st.text_input("Duration Text Pattern (Optional)", help="e.g., '3 DAYS ONLY', 'Sale Ends Sunday'")
                 location_form = st.text_input("Location*", help="Store address or general area.")
-                base_hashtags_form = st.text_input("Base Hashtags*", help="Comma-separated")
+                base_hashtags_form = st.text_input("Base Hashtags*", help="Comma-separated, e.g., #MyStore,#Deals")
 
                 submitted_new_store = st.form_submit_button("💾 Save New Store Definition")
 
                 if submitted_new_store:
                     if not all([store_name_form, sale_type_key_form, sale_type_display_name_form, language_form, original_example_form, location_form, base_hashtags_form]):
-                        st.error("Please fill in all required (*) fields.")
+                        st.error("Please fill in all required (*) fields. Date Format can be blank.")
                     else:
                         store_key = re.sub(r'[^A-Z0-9_]', '', store_name_form.upper().replace(" ", "_"))
                         sale_type_key = re.sub(r'[^A-Z0-9_]', '', sale_type_key_form.upper())
 
                         if not store_key or not sale_type_key:
-                            st.error("Store Name and Sale Type Key must be valid.")
+                            st.error("Store Name and Sale Type Key must result in valid identifiers.")
                         else:
                             new_sale_type_details = {
                                 'id': f"{store_key.lower()}_{sale_type_key.lower()}",
@@ -432,7 +492,7 @@ def main():
                                 'baseHashtags': base_hashtags_form
                             }
                             
-                            if 'custom_base_captions' not in st.session_state:
+                            if not isinstance(st.session_state.get('custom_base_captions'), dict):
                                 st.session_state.custom_base_captions = {}
                             
                             if store_key not in st.session_state.custom_base_captions:
@@ -450,7 +510,7 @@ def main():
                             st.rerun() 
 
         st.markdown("---")
-        st.caption(f"Caption Gen v4.5 // {datetime.date.today().strftime('%Y-%m-%d')}")
+        st.caption(f"Caption Gen v4.3 // {datetime.date.today().strftime('%Y-%m-%d')}")
 
 
     # --- File Uploader ---
@@ -537,7 +597,7 @@ def main():
 
     # --- File Analysis Logic ---
     if st.session_state.is_analyzing_images and st.session_state.uploaded_files_info:
-        with st.spinner("Performing advanced analysis... This may take a moment."):
+        with st.spinner("Analyzing files... This may take a few moments. Videos can take longer."):
             progress_bar = st.progress(0)
             total_files = len(st.session_state.uploaded_files_info)
             temp_analysis_results = []
@@ -553,9 +613,9 @@ def main():
                     "original_filename": file_info['name'],
                     "image_bytes_for_preview": file_info['display_thumbnail_bytes'], 
                     "itemProduct": "", "itemCategory": "N/A",
-                    "officialBrands": "N/A", "productAttributes": "N/A", "priceNotes": "N/A",
-                    "itemPriceFull": "", # Replaces customItemPrice and itemPriceValue for simplicity
-                    "selectedStoreKey": st.session_state.global_selected_store_key,
+                    "detectedBrands": "N/A", "selectedStoreKey": st.session_state.global_selected_store_key, 
+                    "selectedPriceFormat": PREDEFINED_PRICES[1]['value'] if PREDEFINED_PRICES and len(PREDEFINED_PRICES) > 1 else (PREDEFINED_PRICES[0]['value'] if PREDEFINED_PRICES else "CUSTOM"),
+                    "itemPriceValue": "", "customItemPrice": "",
                     "dateRange": {"start": datetime.date.today().strftime("%Y-%m-%d"), "end": (datetime.date.today() + datetime.timedelta(days=6)).strftime("%Y-%m-%d")},
                     "generatedCaption": "", "analysisError": "", "batch_selected": False
                 }
@@ -568,17 +628,45 @@ def main():
                         analysis_text = analyze_video_frames(VISION_MODEL, file_info['bytes'], current_image_analysis_prompt)
                     else: 
                         analysis_text = analyze_image_with_gemini(VISION_MODEL, file_info['bytes'], current_image_analysis_prompt)
-                    
-                    # New, more detailed extraction
+
                     analysis_data_item['itemProduct'] = extract_field(r"^Product Name: (.*)$", analysis_text, default="Unknown Product").title()
                     analysis_data_item['itemCategory'] = extract_field(r"^Product Category: (.*)$", analysis_text, default="General Grocery")
-                    analysis_data_item['officialBrands'] = extract_field(r"^Official Brands: (.*)$", analysis_text, default="N/A")
-                    analysis_data_item['productAttributes'] = extract_field(r"^Product Attributes/Certifications: (.*)$", analysis_text, default="N/A")
-                    
-                    # New Price Extraction
-                    analysis_data_item['itemPriceFull'] = extract_field(r"^Full Price String: (.*)$", analysis_text, default="N/A")
-                    analysis_data_item['priceNotes'] = extract_field(r"^Price Notes: (.*)$", analysis_text, default="N/A")
-                    
+                    analysis_data_item['detectedBrands'] = extract_field(r"^Detected Brands/Logos: (.*)$", analysis_text, default="N/A")
+
+                    extracted_price_str = extract_field(r"^Price: (.*)$", analysis_text)
+                    if extracted_price_str and extracted_price_str.lower() not in ["not found", "n/a"]:
+                        found_format = False
+                        for p_format in PREDEFINED_PRICES:
+                            if p_format['value'] == "CUSTOM": continue 
+                            unit_part_match_condition = False
+                            if p_format['value'] == "X for $Y":
+                                if "for" in extracted_price_str.lower() and ("$" in extracted_price_str or "¢" in extracted_price_str):
+                                    unit_part_match_condition = True
+                            elif " " in p_format['value']: 
+                                if p_format['value'].split(" ", 1)[1].lower() in extracted_price_str.lower():
+                                    unit_part_match_condition = True
+                            else:
+                                if p_format['value'].lower() in extracted_price_str.lower():
+                                    unit_part_match_condition = True
+                            if unit_part_match_condition:
+                                analysis_data_item['selectedPriceFormat'] = p_format['value']
+                                if p_format['value'] == "X for $Y": 
+                                    analysis_data_item['itemPriceValue'] = extracted_price_str
+                                else: 
+                                    price_val_match = re.search(r"([\d\.]+)", extracted_price_str)
+                                    if price_val_match:
+                                        analysis_data_item['itemPriceValue'] = price_val_match.group(1)
+                                    else: 
+                                        analysis_data_item['selectedPriceFormat'] = "CUSTOM"
+                                        analysis_data_item['customItemPrice'] = extracted_price_str
+                                found_format = True; break
+                        if not found_format: 
+                            analysis_data_item['selectedPriceFormat'] = "CUSTOM"
+                            analysis_data_item['customItemPrice'] = extracted_price_str
+                    else: 
+                        analysis_data_item['selectedPriceFormat'] = "CUSTOM" 
+                        analysis_data_item['customItemPrice'] = "N/A" 
+
                     detected_store_name = extract_field(r"^Store Name: (.*)$", analysis_text)
                     if detected_store_name and detected_store_name.lower() not in ["n/a", "not found"]:
                         matched_key = find_store_key_by_name(detected_store_name, current_combined_captions)
@@ -589,7 +677,6 @@ def main():
                     
                     dates_str = extract_field(r"^Sale Dates: (.*)$", analysis_text)
                     if dates_str and dates_str.lower() not in ["n/a", "not found"]:
-                        # Date parsing logic remains the same, as it's already robust
                         date_parts = re.split(r'\s+to\s+|\s*-\s*|\s*–\s*', dates_str)
                         parsed_start, parsed_end = None, None
                         if len(date_parts) >= 1:
@@ -632,6 +719,8 @@ def main():
                                 analysis_data_item['analysisError'] += "Start date not found. Using today. Review. "
                         except ValueError:
                             analysis_data_item['analysisError'] += "Date parsing error. Defaults used. "
+                            analysis_data_item['dateRange']['start'] = datetime.date.today().strftime("%Y-%m-%d")
+                            analysis_data_item['dateRange']['end'] = (datetime.date.today() + datetime.timedelta(days=6)).strftime("%Y-%m-%d")
                     else: 
                         analysis_data_item['analysisError'] += "Sale dates not found. Defaults used. "
                 except Exception as e:
@@ -642,7 +731,7 @@ def main():
             st.session_state.analyzed_image_data_set_source_length = len(st.session_state.uploaded_files_info) 
             progress_bar.empty() 
             st.session_state.is_analyzing_images = False 
-            st.success(f"✅ Advanced analysis complete for {len(temp_analysis_results)} file(s). Please review below.")
+            st.success(f"✅ File analysis complete for {len(temp_analysis_results)} file(s). Review below.")
             st.rerun() 
 
 
@@ -652,16 +741,127 @@ def main():
         if st.button("✍️ Generate Captions for Selected Items", type="primary", use_container_width=True,
                       disabled=st.session_state.is_batch_generating_captions or not items_selected_for_batch):
             st.session_state.is_batch_generating_captions = True
-            # This would now call exec_single_item_generation in a loop for selected items
-            # To avoid repetition, this logic is now fully encapsulated in the helper
-            with st.spinner("Generating captions for selected items..."):
-                generated_count = 0
-                for index, item in enumerate(st.session_state.analyzed_image_data_set):
-                    if item.get('batch_selected', False):
-                        exec_single_item_generation(index)
-                        generated_count += 1
+            generated_count = 0
+            items_to_process_by_store = {}
+            for index, data_item_loop_var in enumerate(st.session_state.analyzed_image_data_set):
+                if data_item_loop_var.get('batch_selected', False):
+                    store_key = data_item_loop_var['selectedStoreKey']
+                    if store_key not in items_to_process_by_store:
+                        items_to_process_by_store[store_key] = []
+                    items_to_process_by_store[store_key].append(index) 
+
+            with st.spinner("Generating captions for selected items... This can take a while for many items."):
+                for store_key_for_batch, item_indices in items_to_process_by_store.items():
+                    reference_caption_for_current_store_batch = st.session_state.last_caption_by_store.get(store_key_for_batch)
+                    for index_in_session_state in item_indices:
+                        current_data_item_ref = st.session_state.analyzed_image_data_set[index_in_session_state]
+                        current_data_item_ref['generatedCaption'] = "" 
+                        store_details_key = current_data_item_ref['selectedStoreKey']
+                        store_info_set = current_combined_captions.get(store_details_key)
+                        current_error = current_data_item_ref.get('analysisError', "") 
+                        if not store_info_set:
+                            current_error += f" Store details for '{store_details_key}' not found."
+                        else:
+                            sale_detail_sub_key = list(store_info_set.keys())[0] 
+                            if store_details_key == 'TEDS_FRESH_MARKET':
+                                day_for_teds = get_current_day_for_teds() 
+                                if day_for_teds == 2 and 'THREE_DAY' in store_info_set: sale_detail_sub_key = 'THREE_DAY'
+                                elif day_for_teds == 5 and 'FOUR_DAY' in store_info_set: sale_detail_sub_key = 'FOUR_DAY'
+                                elif sale_detail_sub_key not in store_info_set: sale_detail_sub_key = list(store_info_set.keys())[0]
+                            
+                            caption_structure = store_info_set.get(sale_detail_sub_key)
+                            if not caption_structure:
+                                current_error += f" Caption structure for '{sale_detail_sub_key}' in '{store_details_key}' not found."
+                            else:
+                                # MODIFICATION START: Conditional validation
+                                is_sale_based_post = caption_structure.get('dateFormat') != ""
+                                
+                                product_display_text = current_data_item_ref.get('itemProduct', 'Unknown Product')
+                                if not product_display_text.strip() or product_display_text == "Unknown Product":
+                                    current_error += " Product name missing/unknown."
+                                
+                                final_price = get_final_price_string(current_data_item_ref['selectedPriceFormat'], current_data_item_ref['itemPriceValue'], current_data_item_ref['customItemPrice'])
+                                
+                                if is_sale_based_post:
+                                    if not final_price or "[Price Value]" in final_price or "[Custom Price]" in final_price or "[X for $Y Price]" in final_price or "N/A" in final_price:
+                                        current_error += " Invalid/missing price."
+                                    display_dates = format_dates_for_caption_context(current_data_item_ref['dateRange']['start'], current_data_item_ref['dateRange']['end'], caption_structure['dateFormat'], caption_structure['language'])
+                                    if "MISSING" in display_dates or "INVALID" in display_dates:
+                                        current_error += " Invalid dates for caption."
+                                
+                                can_generate_prompt = True
+                                critical_errors = ["not found.", "missing/unknown."]
+                                if is_sale_based_post:
+                                    critical_errors.extend(["missing price.", "Invalid dates for caption."])
+                                
+                                for err_check in critical_errors:
+                                    if err_check in current_error: 
+                                        can_generate_prompt = False; break
+                                
+                                if can_generate_prompt:
+                                    holiday_ctx = get_holiday_context(current_data_item_ref['dateRange']['start'], current_data_item_ref['dateRange']['end'])
+                                    prompt_list = [f"Generate a social media caption for a grocery store promotion.", f"Store & Sale Type: {caption_structure['name']}"]
+                                    
+                                    detected_brands = current_data_item_ref.get('detectedBrands', 'N/A')
+                                    temp_product_display_text = product_display_text 
+                                    if detected_brands.lower() not in ['n/a', 'not found', '']:
+                                        temp_product_display_text += f" (featuring {detected_brands})"
+                                    
+                                    prompt_list.append(f"Product to feature: {temp_product_display_text}")
+
+                                    if is_sale_based_post:
+                                        prompt_list.extend([
+                                            f"Price: {final_price}",
+                                            f"Sale Dates (for display in caption): {display_dates}. (Actual period: {current_data_item_ref['dateRange']['start']} to {current_data_item_ref['dateRange']['end']})."
+                                        ])
+
+                                    if holiday_ctx and is_sale_based_post: prompt_list.append(f"Relevant Holiday Context: {holiday_ctx}.")
+                                    
+                                    prompt_list.extend([
+                                        f"Store Location: {caption_structure['location']}.", 
+                                        f"Language for caption: {caption_structure['language']}.", 
+                                        f"Desired Tone: {st.session_state.global_selected_tone}."
+                                    ])
+                                    
+                                    if holiday_ctx and st.session_state.global_selected_tone == "Seasonal / Festive": 
+                                        prompt_list.append(f"Strongly emphasize the {holiday_ctx} theme and use relevant emojis.")
+                                    
+                                    if reference_caption_for_current_store_batch:
+                                        prompt_list.extend([f"\nIMPORTANT STYLISTIC NOTE: For consistency with other posts for this store, please try to follow a similar structure, tone, and overall style to the following reference caption. Adapt product details, price, and specific emojis for the current item, but keep the general formatting and sentence flow consistent with the reference.", f"REFERENCE CAPTION START:\n{reference_caption_for_current_store_batch}\nREFERENCE CAPTION END\nEnsure your new caption is unique and accurate for the current product."])
+                                    
+                                    prompt_list.extend([f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"", "\nCaption Requirements:", "- Unique, engaging, ready for social media."])
+
+                                    if is_sale_based_post:
+                                        prompt_list.append(f"- Feature the product on sale by stating its name (and brand like '{detected_brands}' if relevant and not 'N/A') immediately followed by or closely linked to its price. For example: '{temp_product_display_text} is now {final_price}!'. Also, clearly include the sale dates (as per 'display_dates'), and the store location.")
+                                    else:
+                                        prompt_list.append(f"- Feature the product by describing it in an appealing way, for example: 'Come try our delicious {temp_product_display_text} today!'.")
+
+                                    prompt_list.append(f"- Incorporate relevant emojis for product, tone, and holiday ({holiday_ctx if is_sale_based_post else 'general appeal'}).")
+                                    
+                                    item_category_for_prompt = current_data_item_ref.get('itemCategory', 'N/A'); base_hashtags = caption_structure['baseHashtags']; hashtag_details = [f"product-specific for '{product_display_text}'"] 
+                                    if item_category_for_prompt.lower() not in ['n/a', 'not found', '', 'general grocery']:
+                                        hashtag_details.append(f"category '{item_category_for_prompt}'")
+                                    prompt_list.append(f"- Include these base hashtags: {base_hashtags}. Add 2-3 creative hashtags. Also, 1-2 hashtags for each: {', '.join(hashtag_details)}.")
+                                    prompt_list.extend([f"- Store's main name ({caption_structure['name'].split('(')[0].strip()}) should be prominent if location \"{caption_structure['location']}\" is just a city/area.", "- Good formatting with line breaks."])
+                                    
+                                    if is_sale_based_post and caption_structure.get('durationTextPattern'):
+                                        prompt_list.append(f"- Naturally integrate promotional phrase \"{caption_structure['durationTextPattern']}\" with sale dates {display_dates} if it makes sense.")
+                                    
+                                    final_prompt_for_caption = "\n".join(prompt_list)
+                                    try:
+                                        generated_text = generate_caption_with_gemini(TEXT_MODEL, final_prompt_for_caption)
+                                        current_data_item_ref['generatedCaption'] = generated_text; generated_count +=1
+                                        if not reference_caption_for_current_store_batch:
+                                            reference_caption_for_current_store_batch = generated_text
+                                        st.session_state.last_caption_by_store[store_key_for_batch] = generated_text
+                                    except Exception as e:
+                                        current_error += f" Caption API error: {str(e)}"
+                        current_data_item_ref['analysisError'] = current_error.strip() 
             st.session_state.is_batch_generating_captions = False
-            st.success(f"Successfully generated captions for {generated_count} item(s).")
+            if generated_count > 0:
+                st.success(f"Successfully generated captions for {generated_count} selected item(s).")
+            else:
+                st.info("No captions were generated in this batch (check errors or selection).")
             st.rerun()
 
 
@@ -689,9 +889,9 @@ def main():
             item_key_prefix = f"item_{data_item_proxy['id']}" 
             data_item = st.session_state.analyzed_image_data_set[index] 
 
-            with st.container(): # Removed border=True to use the new glass style
+            with st.container(border=True): 
                 data_item['batch_selected'] = st.checkbox("Select for Batch Generation", value=data_item.get('batch_selected', False), key=f"{item_key_prefix}_batch_select")
-                st.markdown(f"##### File: **{data_item.get('original_filename', 'N/A')}**")
+                st.markdown(f"##### File: **{data_item.get('original_filename', data_item['id'])}**")
                 if data_item.get('analysisError'): 
                     st.warning(f"💡 Notes/Errors: {data_item['analysisError']}")
 
@@ -704,15 +904,16 @@ def main():
                         st.caption("Preview N/A")
 
 
-                with col2:
-                    # UPDATED UI FIELDS
-                    data_item['itemProduct'] = st.text_input("Product Name", value=data_item.get('itemProduct', ''), key=f"{item_key_prefix}_prod")
-                    data_item['itemCategory'] = st.text_input("Product Category", value=data_item.get('itemCategory', 'N/A'), key=f"{item_key_prefix}_cat")
-                    data_item['officialBrands'] = st.text_input("Official Brands", value=data_item.get('officialBrands', 'N/A'), key=f"{item_key_prefix}_brands")
-                    data_item['productAttributes'] = st.text_input("Product Attributes", value=data_item.get('productAttributes', 'N/A'), key=f"{item_key_prefix}_attrs")
-                    
-                    data_item['itemPriceFull'] = st.text_input("Full Price String", value=data_item.get('itemPriceFull', 'N/A'), key=f"{item_key_prefix}_pricefull")
-                    data_item['priceNotes'] = st.text_input("Price Notes", value=data_item.get('priceNotes', 'N/A'), key=f"{item_key_prefix}_pricenotes")
+                with col2: 
+                    # This section remains largely the same, letting users edit data
+                    new_prod = st.text_input("Product Name", value=data_item.get('itemProduct', ''), key=f"{item_key_prefix}_prod_ind")
+                    if new_prod != data_item.get('itemProduct', ''): data_item['itemProduct'] = new_prod; st.rerun()
+
+                    new_cat = st.text_input("Product Category", value=data_item.get('itemCategory', 'N/A'), key=f"{item_key_prefix}_cat_ind")
+                    if new_cat != data_item.get('itemCategory', 'N/A'): data_item['itemCategory'] = new_cat; st.rerun()
+
+                    new_brands = st.text_input("Detected Brands", value=data_item.get('detectedBrands', 'N/A'), key=f"{item_key_prefix}_brands_ind", help="Comma-separated")
+                    if new_brands != data_item.get('detectedBrands', 'N/A'): data_item['detectedBrands'] = new_brands; st.rerun()
 
                     store_options_map = { k: (v[list(v.keys())[0]]['name'].split('(')[0].strip() if v and list(v.keys()) else k.replace('_', ' ')) or k.replace('_', ' ') for k, v in current_combined_captions.items()}
                     current_store_key = data_item.get('selectedStoreKey', st.session_state.global_selected_store_key)
@@ -724,39 +925,88 @@ def main():
                         try:
                             valid_keys = list(store_options_map.keys())
                             store_idx = valid_keys.index(current_store_key) if current_store_key in valid_keys else 0
-                            selected_store_display_name = st.selectbox("Store", options=list(store_options_map.keys()), format_func=lambda k: store_options_map[k], index=store_idx, key=f"{item_key_prefix}_store")
-                            data_item['selectedStoreKey'] = selected_store_display_name
-                        except ValueError:
-                             pass # Handle case where store might not be found
+                        except ValueError: store_idx = 0 
+                        selected_store_display_name = st.selectbox("Store", options=list(store_options_map.values()), index=store_idx, key=f"{item_key_prefix}_store_ind")
+                        new_selected_store_key = next((k for k, v_disp in store_options_map.items() if v_disp == selected_store_display_name), current_store_key)
+                        if new_selected_store_key != data_item.get('selectedStoreKey'):
+                            data_item['selectedStoreKey'] = new_selected_store_key; st.rerun()
+                    else: st.text("No stores available to select.")
                     
-                    date_c1, date_c2 = st.columns(2)
-                    s_dt_val = datetime.datetime.strptime(data_item['dateRange']['start'], "%Y-%m-%d").date() if isinstance(data_item['dateRange']['start'], str) else data_item['dateRange']['start']
-                    e_dt_val = datetime.datetime.strptime(data_item['dateRange']['end'], "%Y-%m-%d").date() if isinstance(data_item['dateRange']['end'], str) else data_item['dateRange']['end']
-                    
-                    data_item['dateRange']['start'] = date_c1.date_input("Start Date", value=s_dt_val, key=f"{item_key_prefix}_sdate")
-                    data_item['dateRange']['end'] = date_c2.date_input("End Date", value=e_dt_val, key=f"{item_key_prefix}_edate", min_value=data_item['dateRange']['start'])
+                    # Get the caption structure to conditionally show price/date fields
+                    temp_store_key = data_item.get('selectedStoreKey')
+                    temp_store_info = current_combined_captions.get(temp_store_key, {})
+                    temp_sub_key = list(temp_store_info.keys())[0] if temp_store_info else None
+                    temp_caption_structure = temp_store_info.get(temp_sub_key, {})
+                    is_sale_based_ui = temp_caption_structure.get('dateFormat') != ""
+
+                    if is_sale_based_ui:
+                        price_fmt_map = {p['value']: p['label'] for p in PREDEFINED_PRICES}
+                        current_price_format = data_item.get('selectedPriceFormat', PREDEFINED_PRICES[1]['value'] if PREDEFINED_PRICES and len(PREDEFINED_PRICES) > 1 else (PREDEFINED_PRICES[0]['value'] if PREDEFINED_PRICES else "CUSTOM"))
+                        if PREDEFINED_PRICES:
+                            try: p_fmt_idx = list(price_fmt_map.keys()).index(current_price_format)
+                            except ValueError: p_fmt_idx = 1 if len(PREDEFINED_PRICES) > 1 else 0 
+                            selected_price_format_val = st.selectbox("Price Format", options=list(price_fmt_map.keys()), format_func=lambda x: price_fmt_map[x], index=p_fmt_idx, key=f"{item_key_prefix}_pfmt_ind")
+                            if selected_price_format_val != data_item.get('selectedPriceFormat'):
+                                data_item['selectedPriceFormat'] = selected_price_format_val; st.rerun()
+                            if selected_price_format_val == "CUSTOM":
+                                new_custom_p = st.text_input("Custom Price Text", value=data_item.get('customItemPrice', ''), key=f"{item_key_prefix}_pcustom_ind")
+                                if new_custom_p != data_item.get('customItemPrice', ''): data_item['customItemPrice'] = new_custom_p; st.rerun()
+                            elif selected_price_format_val == "X for $Y":
+                                new_xfory_p = st.text_input("Price (e.g., 2 for $5.00)", value=data_item.get('itemPriceValue', ''), key=f"{item_key_prefix}_pxfory_ind")
+                                if new_xfory_p != data_item.get('itemPriceValue', ''): data_item['itemPriceValue'] = new_xfory_p; st.rerun()
+                            else: 
+                                new_pval = st.text_input("Price Value (e.g., 1.99 or 79)", value=data_item.get('itemPriceValue', ''), key=f"{item_key_prefix}_pval_ind")
+                                if new_pval != data_item.get('itemPriceValue', ''): data_item['itemPriceValue'] = new_pval; st.rerun()
+                        else: st.text("No price formats defined.")
+
+                        date_c1, date_c2 = st.columns(2)
+                        with date_c1:
+                            try: s_dt_val = datetime.datetime.strptime(data_item['dateRange']['start'], "%Y-%m-%d").date()
+                            except: s_dt_val = datetime.date.today() 
+                            new_s_dt = st.date_input("Start Date", value=s_dt_val, key=f"{item_key_prefix}_sdate_ind")
+                            if new_s_dt.strftime("%Y-%m-%d") != data_item['dateRange']['start']:
+                                data_item['dateRange']['start'] = new_s_dt.strftime("%Y-%m-%d"); st.rerun()
+                        with date_c2:
+                            try: e_dt_val = datetime.datetime.strptime(data_item['dateRange']['end'], "%Y-%m-%d").date()
+                            except: e_dt_val = datetime.date.today() + datetime.timedelta(days=6) 
+                            current_start_date_for_end_picker = datetime.datetime.strptime(data_item['dateRange']['start'], "%Y-%m-%d").date()
+                            new_e_dt = st.date_input("End Date", value=e_dt_val, key=f"{item_key_prefix}_edate_ind", min_value=current_start_date_for_end_picker)
+                            if new_e_dt.strftime("%Y-%m-%d") != data_item['dateRange']['end']:
+                                data_item['dateRange']['end'] = new_e_dt.strftime("%Y-%m-%d"); st.rerun()
                 
-                if st.button(f"✍️ Generate Caption for this Item", key=f"{item_key_prefix}_gen_btn", type="secondary", use_container_width=True):
-                    with st.spinner("Generating caption..."):
-                        exec_single_item_generation(index)
-                    st.rerun()
+                caption_loading_key = f"{item_key_prefix}_caption_loading_ind"
+                if caption_loading_key not in st.session_state: st.session_state[caption_loading_key] = False 
+                if st.button(f"✍️ Generate Caption for this Item", key=f"{item_key_prefix}_gen_btn_ind",
+                              disabled=st.session_state[caption_loading_key] or st.session_state.is_batch_generating_captions,
+                              type="secondary", use_container_width=True):
+                    
+                    st.session_state[caption_loading_key] = True 
+                    # Re-use the batch generation logic for a single item
+                    exec_single_item_generation(index) # Use a helper to avoid code duplication
+                    st.session_state[caption_loading_key] = False 
+                    st.rerun() 
 
+                if st.session_state[caption_loading_key]: 
+                    st.caption("⏳ Generating caption for this item...")
+                
                 if data_item.get('generatedCaption'):
-                    st.text_area("📝 Generated Caption:", value=data_item['generatedCaption'], height=200, key=f"{item_key_prefix}_capt_out", help="Review and copy below.")
-                    # Simplified copy button for clarity
-                    st.code(data_item['generatedCaption'], language=None)
-
+                    caption_text_to_display = data_item['generatedCaption']
+                    st.text_area("📝 Generated Caption:", value=caption_text_to_display, height=200, key=f"{item_key_prefix}_capt_out_display_ind", help="Review and copy below.")
+                    text_area_id = f"copytext_{item_key_prefix}_ind"; feedback_span_id = f"copyfeedback_{item_key_prefix}_ind"
+                    escaped_caption_for_html = html_escaper.escape(caption_text_to_display) 
+                    copy_button_html_content = f"""<textarea id="{text_area_id}" style="opacity:0.01; height:1px; width:1px; position:absolute; z-index: -1; pointer-events:none;" readonly>{escaped_caption_for_html}</textarea><button onclick="copyToClipboard('{text_area_id}', '{feedback_span_id}')" style="padding: 0.25rem 0.75rem; margin-top: 5px; border-radius: 8px; border: 1px solid #4A4D56; background-color: #262730; color: #FAFAFA; cursor:pointer;">📋 Copy Caption</button><span id="{feedback_span_id}" style="margin-left: 10px; font-size: 0.9em;"></span><script>if(typeof window.copyToClipboard !== 'function'){{window.copyToClipboard=function(elementId,feedbackId){{var copyText=document.getElementById(elementId);var feedbackSpan=document.getElementById(feedbackId);if(!copyText||!feedbackSpan){{if(feedbackSpan)feedbackSpan.innerText="Error: Elements missing.";return;}}copyText.style.display='block';copyText.select();copyText.setSelectionRange(0,99999);copyText.style.display='none';var msg="";try{{var successful=document.execCommand('copy');msg=successful?'Copied!':'Copy failed.';}}catch(err){{msg='Oops, unable to copy.';}}feedbackSpan.innerText=msg;setTimeout(function(){{feedbackSpan.innerText='';}},2500);}}}}</script>"""
+                    st_html_component(copy_button_html_content, height=45)
             st.markdown("---") 
 
     else: 
         if not st.session_state.is_analyzing_images and not st.session_state.uploaded_files_info:
-            st.info("☝️ Upload image or video files of grocery ads to get started.")
+            st.info("☝️ Upload some image or video files of grocery sale ads to get started, or add a new store definition via the sidebar!")
 
 def exec_single_item_generation(index):
-    """Helper function to run caption generation logic for a single item."""
+    """Helper function to run caption generation logic for a single item to reduce code duplication."""
     current_combined_captions = get_combined_captions()
     data_item = st.session_state.analyzed_image_data_set[index]
-    data_item['generatedCaption'] = ""
+    data_item['generatedCaption'] = "" 
     store_details_key = data_item['selectedStoreKey']
     store_info_set = current_combined_captions.get(store_details_key)
     current_error = data_item.get('analysisError', "") 
@@ -765,57 +1015,90 @@ def exec_single_item_generation(index):
         current_error += f" Store details for '{store_details_key}' not found."
     else:
         sale_detail_sub_key = list(store_info_set.keys())[0]
-        # ... Teds logic ...
+        if store_details_key == 'TEDS_FRESH_MARKET':
+            day_for_teds = get_current_day_for_teds()
+            if day_for_teds == 2 and 'THREE_DAY' in store_info_set: sale_detail_sub_key = 'THREE_DAY'
+            elif day_for_teds == 5 and 'FOUR_DAY' in store_info_set: sale_detail_sub_key = 'FOUR_DAY'
+            elif sale_detail_sub_key not in store_info_set: sale_detail_sub_key = list(store_info_set.keys())[0]
+        
         caption_structure = store_info_set.get(sale_detail_sub_key)
         if not caption_structure:
-            current_error += f" Caption structure for '{sale_detail_sub_key}' not found."
+            current_error += f" Caption structure for '{sale_detail_sub_key}' under '{store_details_key}' not found."
         else:
-            product_name = data_item.get('itemProduct', 'Unknown Product')
-            full_price = data_item.get('itemPriceFull', 'N/A')
-            price_notes = data_item.get('priceNotes', 'N/A')
-            brands = data_item.get('officialBrands', 'N/A')
-            attributes = data_item.get('productAttributes', 'N/A')
-
-            # Validation
-            if product_name == "Unknown Product": current_error += " Product name missing. "
-            if full_price == "N/A": current_error += " Price missing. "
+            is_sale_based_post = caption_structure.get('dateFormat') != ""
             
-            if not current_error:
-                start_date_str = data_item['dateRange']['start'].strftime("%Y-%m-%d")
-                end_date_str = data_item['dateRange']['end'].strftime("%Y-%m-%d")
-                display_dates = format_dates_for_caption_context(start_date_str, end_date_str, caption_structure['dateFormat'], caption_structure['language'])
-                holiday_ctx = get_holiday_context(start_date_str, end_date_str)
+            product_display_text = data_item.get('itemProduct', 'Unknown Product')
+            if not product_display_text.strip() or product_display_text == "Unknown Product":
+                current_error += " Product name missing/unknown."
+            
+            final_price = get_final_price_string(data_item['selectedPriceFormat'], data_item['itemPriceValue'], data_item['customItemPrice'])
+            
+            if is_sale_based_post:
+                if not final_price or "[Price Value]" in final_price or "[Custom Price]" in final_price or "[X for $Y Price]" in final_price or "N/A" in final_price:
+                    current_error += " Invalid/missing price."
+                display_dates = format_dates_for_caption_context(data_item['dateRange']['start'], data_item['dateRange']['end'], caption_structure['dateFormat'], caption_structure['language'])
+                if "MISSING" in display_dates or "INVALID" in display_dates:
+                    current_error += " Invalid date range for caption."
 
-                # --- NEW, SMARTER PROMPT CONSTRUCTION ---
-                prompt_list = [
-                    f"Generate an engaging, natural-sounding social media caption for a grocery store promotion.",
-                    f"Store & Sale Type: {caption_structure['name']}",
-                    f"Product: {product_name}",
-                    f"Price: {full_price}",
-                    f"Sale Dates: {display_dates}",
-                    f"Language: {caption_structure['language']}",
-                    f"Desired Tone: {st.session_state.global_selected_tone}"
-                ]
-                
-                # Contextual instructions for brands and attributes
-                if brands and brands.lower() != 'not found':
-                    prompt_list.append(f"Official Brand: {brands}. Mention this as the brand of the product (e.g., '{brands} {product_name}').")
-                if attributes and attributes.lower() != 'not found':
-                    prompt_list.append(f"Key Attributes: {attributes}. Weave these into the description of the product naturally (e.g., 'tender {attributes} beef', 'fresh {attributes} strawberries').")
-                
-                if price_notes and price_notes.lower() != 'not found':
-                    prompt_list.append(f"IMPORTANT Price Condition: Mention '{price_notes}' clearly with the price.")
-                
-                if holiday_ctx:
-                    prompt_list.append(f"Holiday Context: The sale falls during {holiday_ctx}. Connect the product to the holiday.")
+            can_generate_prompt = True
+            critical_errors = ["not found.", "missing/unknown."]
+            if is_sale_based_post:
+                critical_errors.extend(["missing price.", "Invalid date range for caption."])
 
-                prompt_list.append("\n**INSTRUCTIONS:**")
-                prompt_list.append("- Write a caption that is seamless and not robotic. Do not just list the facts.")
-                prompt_list.append("- Integrate the brand and attributes as adjectives or context, not as an awkward list.")
-                prompt_list.append(f"- Use the store location: {caption_structure['location']}.")
-                prompt_list.append(f"- Include these base hashtags: {caption_structure['baseHashtags']}. Add 2-4 other creative, relevant hashtags.")
-                prompt_list.append("- Use relevant emojis.")
+            for err_check in critical_errors:
+                if err_check in current_error:
+                    can_generate_prompt = False; break
+            
+            if can_generate_prompt:
+                holiday_ctx = get_holiday_context(data_item['dateRange']['start'], data_item['dateRange']['end']) if is_sale_based_post else ""
+                prompt_list = [f"Generate a social media caption for a grocery store promotion.", f"Store & Sale Type: {caption_structure['name']}"]
+                
+                detected_brands = data_item.get('detectedBrands', 'N/A')
+                temp_product_display_text = product_display_text
+                if detected_brands.lower() not in ['n/a', 'not found', '']: temp_product_display_text += f" (featuring {detected_brands})"
+                
+                prompt_list.append(f"Product to feature: {temp_product_display_text}")
 
+                if is_sale_based_post:
+                    prompt_list.extend([
+                        f"Price: {final_price}",
+                        f"Sale Dates (for display in caption): {display_dates}. (Actual period: {data_item['dateRange']['start']} to {data_item['dateRange']['end']})."
+                    ])
+                
+                if holiday_ctx: prompt_list.append(f"Relevant Holiday Context: {holiday_ctx}.")
+                
+                prompt_list.extend([
+                    f"Store Location: {caption_structure['location']}.", 
+                    f"Language for caption: {caption_structure['language']}.", 
+                    f"Desired Tone: {st.session_state.global_selected_tone}."
+                ])
+
+                if holiday_ctx and st.session_state.global_selected_tone == "Seasonal / Festive":
+                    prompt_list.append(f"Strongly emphasize the {holiday_ctx} theme and use relevant emojis.")
+                
+                reference_caption_for_store = st.session_state.last_caption_by_store.get(store_details_key)
+                if reference_caption_for_store:
+                    prompt_list.extend([f"\nIMPORTANT STYLISTIC NOTE: For consistency with other posts for this store, please try to follow a similar structure, tone, and overall style to the following reference caption. Adapt product details, price, and specific emojis for the current item, but keep the general formatting and sentence flow consistent with the reference.", f"REFERENCE CAPTION START:\n{reference_caption_for_store}\nREFERENCE CAPTION END\nEnsure your new caption is unique and accurate for the current product."])
+                
+                prompt_list.extend([f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"", "\nCaption Requirements:", "- Unique, engaging, ready for social media."])
+
+                if is_sale_based_post:
+                    prompt_list.append(f"- Feature the product on sale by stating its name (and brand like '{detected_brands}' if relevant and not 'N/A') immediately followed by or closely linked to its price. For example: '{temp_product_display_text} is now {final_price}!'. Also, clearly include the sale dates (as per 'display_dates'), and the store location.")
+                else:
+                    prompt_list.append(f"- Feature the product by describing it in an appealing way, for example: 'Come try our delicious {temp_product_display_text} today!'. Do not mention price or sale dates.")
+
+                prompt_list.append(f"- Incorporate relevant emojis for product, tone, and holiday ({holiday_ctx if is_sale_based_post else 'general appeal'}).")
+
+                item_category_for_prompt = data_item.get('itemCategory', 'N/A'); base_hashtags = caption_structure['baseHashtags']; hashtag_details = [f"product-specific for '{product_display_text}'"]
+                if item_category_for_prompt.lower() not in ['n/a', 'not found', '', 'general grocery']:
+                    hashtag_details.append(f"category '{item_category_for_prompt}'")
+                prompt_list.append(f"- Include these base hashtags: {base_hashtags}. Add 2-3 creative hashtags. Also, 1-2 hashtags for each: {', '.join(hashtag_details)}.")
+                
+                prompt_list.extend([f"- Store's main name ({caption_structure['name'].split('(')[0].strip()}) should be prominent if location \"{caption_structure['location']}\" is just a city/area.", "- Good formatting with line breaks."])
+                
+                if is_sale_based_post and caption_structure.get('durationTextPattern'):
+                    prompt_list.append(f"- Naturally integrate promotional phrase \"{caption_structure['durationTextPattern']}\" with sale dates {display_dates} if it makes sense.")
+                
                 final_prompt_for_caption = "\n".join(prompt_list)
                 try:
                     generated_text = generate_caption_with_gemini(TEXT_MODEL, final_prompt_for_caption)
@@ -823,7 +1106,7 @@ def exec_single_item_generation(index):
                     st.session_state.last_caption_by_store[store_details_key] = generated_text
                 except Exception as e:
                     current_error += f" Caption API error: {str(e)}"
-
+    
     data_item['analysisError'] = current_error.strip()
 
 if __name__ == "__main__":
