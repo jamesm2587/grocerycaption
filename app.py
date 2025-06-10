@@ -26,162 +26,131 @@ CUSTOM_STORES_FILE = "custom_stores.json"
 
 # --- NEW UI Function ---
 def load_custom_ui():
-    """Injects custom CSS for a glassmorphic UI."""
+    """Injects custom CSS for a dark, legible glassmorphic UI."""
     st.markdown("""
         <style>
-            /* --- GENERAL & BACKGROUND --- */
+            /* --- 1. GENERAL & BACKGROUND --- */
             .stApp {
-                background: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+                background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0iIzE4MTgyOCI+PC9yZWN0Pgo8Y2lyY2xlIGN4PSIxMCIgY3k9IjEwIiByPSIxIiBmaWxsPSJ2YXIoLS1zZWNvbmRhcnlCYWNrZ3JvdW5kQ29sb3IsICMyNzI5MzUpIj48L2NpcmNsZT4KPC9zdmc+);
                 background-attachment: fixed;
             }
             .main .block-container {
                 padding-top: 2rem;
                 padding-bottom: 2rem;
             }
-            h1, h2, h3, h4, h5, h6 {
-                font-weight: 600;
-                color: #FFFFFF;
-                text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            h1, h2, h3, h4, h5, h6, .stMarkdown, .stCaptionContainer p, .stCheckbox label {
+                color: #FFFFFF; /* Ensure all text is white for legibility */
+                text-shadow: 0 1px 3px rgba(0,0,0,0.4);
             }
-            .stMarkdown, .stCaptionContainer {
-                color: #E0E0E0;
-            }
-            
-            /* --- TITLE --- */
             h1 {
                 text-align: center;
                 font-size: 2.8rem;
-                letter-spacing: -1px;
-                padding-bottom: 1rem;
-                margin-bottom: 2rem;
             }
 
-            /* --- Glassmorphism Element Style --- */
+            /* --- 2. CORE GLASSMORPHIC STYLE --- */
             .glass-element {
-                background: rgba(255, 255, 255, 0.15);
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px); /* For Safari */
+                background: rgba(40, 43, 54, 0.6); /* Dark, semi-transparent base */
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px); /* For Safari */
                 border-radius: 16px;
-                border: 1px solid rgba(255, 255, 255, 0.25);
-                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+                padding: 1.5rem;
             }
 
-            /* --- BUTTONS --- */
+            /* --- 3. APPLYING THE STYLE TO STREAMLIT ELEMENTS --- */
+
+            /* Main Item Cards */
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div {
+                background: rgba(40, 43, 54, 0.6);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border-radius: 16px;
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            /* Sidebar */
+            div[data-testid="stSidebar"] > div:first-child {
+                background: rgba(24, 24, 40, 0.7);
+                backdrop-filter: blur(15px);
+                -webkit-backdrop-filter: blur(15px);
+                border-right: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+            /* Expanders */
+            div[data-testid="stExpander"] {
+                border: none;
+                margin-bottom: 1rem;
+                background: rgba(50, 53, 64, 0.5);
+                border-radius: 16px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            div[data-testid="stExpander"] summary {
+                font-weight: 600;
+                color: #FFFFFF;
+                padding: 0.8rem;
+            }
+            
+            /* File Uploader */
+            div[data-testid="stFileUploader"] {
+                background: transparent;
+                border: 2px dashed rgba(255, 255, 255, 0.2);
+                border-radius: 16px;
+            }
+            div[data-testid="stFileUploader"] label {
+                color: #FFFFFF;
+            }
+
+            /* --- 4. FORM ELEMENTS & BUTTONS for Consistency --- */
+
+            /* Input Fields (Text, Text Area, Select, Date) */
+            .stTextInput input, .stTextArea textarea, .stDateInput input, .stSelectbox > div[data-baseweb="select"] > div {
+                border-radius: 12px !important;
+                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                background-color: rgba(0, 0, 0, 0.25) !important;
+                color: #FFFFFF !important;
+            }
+            .stTextInput input:focus, .stTextArea textarea:focus, .stSelectbox > div[data-baseweb="select"] > div:focus-within, .stDateInput input:focus {
+                border-color: rgba(108, 92, 231, 1) !important;
+                box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.5) !important;
+            }
+
+            /* Buttons */
             .stButton > button {
                 border-radius: 12px;
-                padding: 10px 20px;
                 font-weight: 600;
-                transition: all 0.3s ease;
-                border: 1px solid rgba(255, 255, 255, 0.3);
+                transition: all 0.2s ease-in-out;
+                border: 1px solid rgba(255, 255, 255, 0.2);
                 color: #FFFFFF;
             }
             div[data-testid="stButton"] > button[kind="primary"] {
-                 background: rgba(108, 92, 231, 0.8);
+                 background-color: #6c5ce7; /* Keep primary color for important actions */
+                 border: none;
             }
             div[data-testid="stButton"] > button[kind="primary"]:hover {
-                 background: rgba(108, 92, 231, 1);
-                 box-shadow: 0 0 15px rgba(108, 92, 231, 0.7);
+                 background-color: #5848c7;
+                 box-shadow: 0 0 10px #6c5ce7;
             }
             div[data-testid="stButton"] > button[kind="secondary"] {
-                background: rgba(255, 255, 255, 0.2);
+                background-color: rgba(255, 255, 255, 0.15);
             }
             div[data-testid="stButton"] > button[kind="secondary"]:hover {
-                background: rgba(255, 255, 255, 0.4);
-                border-color: rgba(255, 255, 255, 0.5);
+                background-color: rgba(255, 255, 255, 0.25);
+                border-color: rgba(255, 255, 255, 0.3);
             }
 
-            /* --- FILE UPLOADER --- */
-            div[data-testid="stFileUploader"] {
-                border: 2px dashed rgba(255, 255, 255, 0.4);
-                background: rgba(255, 255, 255, 0.1);
-                border-radius: 16px;
-                padding: 1.5rem;
-            }
-            div[data-testid="stFileUploader"] label {
-                font-size: 1.1rem;
-                font-weight: 600;
-                color: #FFFFFF;
-            }
-
-            /* --- SIDEBAR --- */
-            div[data-testid="stSidebar"] > div:first-child {
-                background: rgba(0, 0, 0, 0.2);
-                backdrop-filter: blur(15px);
-                -webkit-backdrop-filter: blur(15px);
-                border-right: 1px solid rgba(255, 255, 255, 0.18);
-            }
-
-            /* --- Expander (Main & Sidebar) --- */
-            .main div[data-testid="stExpander"], div[data-testid="stSidebar"] div[data-testid="stExpander"] {
-                border: none;
-                box-shadow: none;
-                margin-bottom: 1.5rem;
-            }
-            .main div[data-testid="stExpander"] summary, div[data-testid="stSidebar"] div[data-testid="stExpander"] summary {
-                font-weight: 600;
-                color: #FFFFFF;
-                padding: 0.5rem;
-                background: rgba(255, 255, 255, 0.1);
-                border-radius: 12px;
-            }
-
-            /* --- BORDERED CONTAINERS / CARDS for individual items --- */
-             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div {
-                background: rgba(255, 255, 255, 0.15);
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
-                border-radius: 16px;
-                border: 1px solid rgba(255, 255, 255, 0.25);
-                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
-                padding: 1.5rem;
-                margin-bottom: 1.5rem;
-            }
-            
-            /* --- Form Elements Spacing within Cards --- */
-            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stTextInput,
-            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stTextArea,
-            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stSelectbox,
-            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stDateInput,
-            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stCheckbox {
-                margin-bottom: 1rem;
-            }
-
-            /* --- Labels for Form Elements --- */
-            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div label,
-            .stCheckbox label {
-                margin-bottom: 0.3rem;
-                display: inline-block;
-                font-weight: 500;
-                color: #FFFFFF;
-            }
-            
-            /* --- Input Fields (Text, Text Area, Select, Date) --- */
-            .stTextInput input, .stTextArea textarea, .stDateInput input {
-                border-radius: 12px !important;
-                border: 1px solid rgba(255, 255, 255, 0.3) !important;
-                background-color: rgba(0, 0, 0, 0.2) !important; 
-                color: #FFFFFF !important; 
-                padding: 0.5rem 0.75rem !important;
-            }
-            .stSelectbox > div[data-baseweb="select"] > div {
-                border-radius: 12px !important;
-                border: 1px solid rgba(255, 255, 255, 0.3) !important;
-                background-color: rgba(0, 0, 0, 0.2) !important;
-            }
-            .stTextInput input:focus, .stTextArea textarea:focus, .stSelectbox > div[data-baseweb="select"] > div:focus-within, .stDateInput input:focus {
-                border-color: rgba(108, 92, 231, 1) !important; 
-                box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.5) !important; 
-            }
-            
-            /* --- Image and Video Previews --- */
+            /* --- 5. VISUALS --- */
             .stImage, .stVideo video {
                 border-radius: 12px;
-                border: 1px solid rgba(255, 255, 255, 0.2);
+                border: 1px solid rgba(255, 255, 255, 0.1);
             }
-            
+
         </style>
     """, unsafe_allow_html=True)
-
+    
 # --- Video Helper Functions ---
 def get_video_thumbnail(video_bytes):
     """Extracts the first frame of a video and returns it as JPG bytes."""
