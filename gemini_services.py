@@ -1,3 +1,4 @@
+
 # gemini_services.py
 from PIL import Image
 import io
@@ -44,17 +45,18 @@ def generate_caption_with_gemini(text_model, prompt):
         # Log error or handle more gracefully
         raise Exception(f"Gemini caption generation failed: {str(e)}")
 
-# MODIFIED: IMAGE_ANALYSIS_PROMPT_TEMPLATE (V4)
+# Reverted Image Analysis Prompt Template (equivalent to V2)
 IMAGE_ANALYSIS_PROMPT_TEMPLATE = (
-    "Analyze this grocery sale image with high precision. Extract details and respond strictly in this format, ensuring each field is on a new line:\n"
-    "Product Name: [Identify the primary product name. If multiple names are visible (e.g., English and Spanish), prioritize the name in the largest text. If text sizes are similar, prefer the English name.]\n"
-    "Official Brands: [List any recognizable company/product brand names visible, e.g., Coca-Cola, Tyson, Lay's. If none, state 'Not found'.]\n"
-    "Product Attributes/Certifications: [List any quality grades, certifications, or descriptive attributes like 'USDA Prime', 'Organic', 'Halal', 'Gluten-Free', 'All Natural'. If none, state 'Not found'.]\n"
-    "Full Price String: [Extract the complete, exact price text as it appears, e.g., '$1.99 / lb', '2 for $5.00', '99¢ each'.]\n"
-    "Price Notes: [Extract any conditions attached to the price, such as 'Limit 2', 'With Card', 'Digital Coupon Required'. If none, state 'Not found'.]\n"
-    "Sale Dates: [Sale period, e.g., MM/DD-MM/DD, Ends MM/DD, May 15-20. Include the year if present.]\n"
-    "Store Name: [Visible store name, if any.]\n"
-    "Promotional Text: [Any other relevant promotional phrases, like '3 Days Only' or 'Special Offer'.]\n"
-    "Product Category: [General category like Produce, Dairy, Meat, Bakery, Pantry, Frozen, Beverages, Snacks, Household. Default to 'General Grocery' if unclear.]\n"
+    "Analyze this grocery sale image. Extract all details precisely. "
+    "Respond strictly in this format, ensuring each field is on a new line:\n"
+    # MODIFIED LINE BELOW:
+    "Product Name: [Identify the primary product name. If multiple names or languages for the same product are visible (e.g., English and Spanish), prioritize the name written in the largest text. If text sizes are similar, prefer the English name if available. List clearly featured sale items.]\n"
+    "Price: [Price of the primary product, including currency and unit, e.g., $1.99/lb, 2 for $5.00, 99¢ each]\n"
+    "Sale Dates: [Sale period, e.g., MM/DD-MM/DD, Ends MM/DD, May 15-20. If year is present, include it.]\n"
+    "Store Name: [Visible store name, if any]\n"
+    "Promotional Text: [Any other relevant promotional phrases or taglines, like '3 Days Only', 'Special Offer']\n"
+    "Product Category: [General category like Produce, Dairy, Meat, Bakery, Pantry, Frozen, Beverages, Snacks, Household. If multiple distinct items, categorize the primary one or provide a comma-separated list if appropriate for a single ad item. Default to 'General Grocery' if unclear.]\n"
+    "Detected Brands/Logos: [List any recognizable product brands or logos visible, e.g., Coca-Cola, Lay's. If none, state 'Not found'. Comma-separate if multiple.]\n"
     "If a field is not found or unclear for any specific line item above, state 'Not found' for that field and only that field."
 )
+
