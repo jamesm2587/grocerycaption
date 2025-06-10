@@ -58,7 +58,7 @@ INITIAL_BASE_CAPTIONS = {
             'baseHashtags': "#SamsFods #Supermarket #CorcoranCA #GroceryDeals #WeeklySpecials #MeatDeals #BeefRoast #ShopLocal"
         }
     },
-    # --- UPDATED STORE NAME HERE ---
+    # --- CORRECTED STORE PLACEMENT ---
     'RRANCH_MARKET': {
         'WEEKLY_DEAL': {
             'id': 'rranchmarket_weekly',
