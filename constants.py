@@ -35,7 +35,7 @@ INITIAL_BASE_CAPTIONS = {
         'WEEK_LONG': {'id': 'laprincesa_week', 'name': "La Princesa Market (Week-Long)", 'language': "spanish", 'original_example': "Bistec de Bola o Bistec de Espaldilla $4.99 x lb.\nHasta 05/20/25\n...", 'defaultProduct': "Bistec de Bola o Espaldilla", 'defaultPrice': "$4.99 x lb.", 'dateFormat': "Hasta DD/MM/YY", 'durationTextPattern': "Hasta el", 'location': "1260 Main st. & 1424 Freedom Blvd.", 'baseHashtags': "#Ofertas #LaPrincesaMarket #CarneFresca #Ahorra #ComidaLatina #TiendaLocal"}
     },
     'MI_TIENDITA': {
-        'WEEKLY_SALE': {'id': 'mitiendita_weekly', 'name': "Mi Tiendita (Ahorros Semanales)", 'language': "spanish", 'original_example': "Trocitos de Puerco $3.49 x lb.\n Ahorros 05/14 - 05/20\n...", 'defaultProduct': "Trocitos de Puerco", 'defaultPrice': "$3.49 x lb.", 'dateFormat': "MM/DD - MM/DD", 'durationTextPattern': "Ahorros", 'location': "📍3145 Payne Ave. San Jose, CA 95117", 'baseHashtags': "#OfertasDeLaSemana #MiTiendita #Ahorra #Sabor #Carne #Verduras #ahorros #grocerydeal #weeklysavings #weeklydeals"}
+        'WEEKLY_SALE': {'id': 'mitiendita_weekly', 'name': "Mi Tiendita (Ahorros Semanales)", 'language': "spanish", 'original_example': "Trocitos de Puerco $3.49 x lb.\n Ahorros 05/14 - 05/20\n...", 'defaultProduct': "Trocitos de Puerco", 'defaultPrice': "$3.49 x lb.", 'dateFormat': "MM/DD - MM/DD", 'durationTextPattern': "Ahorros", 'location': "3145 Payne Ave. San Jose, CA 95117", 'baseHashtags': "#OfertasDeLaSemana #MiTiendita #Ahorra #Sabor #Carne #Verduras #ahorros #grocerydeal #weeklysavings #weeklydeals"}
     },
     'VIVA_SUPERMARKET': {
         'DEAL_UNTIL': {'id': 'viva_deal', 'name': "Viva Supermarket (Weekly Deal)", 'language': "english", 'original_example': "All Natural Halal Chicken Leg Meat $2.49 x lb.\n Deal until from 05/14-05/20\n...", 'defaultProduct': "All Natural Halal Chicken Leg Meat", 'defaultPrice': "$2.49 x lb.", 'dateFormat': "MM/DD-MM/DD", 'durationTextPattern': "Deal until from", 'location': "Viva Supermarket", 'baseHashtags': "#vivasupermarket #grocerydeals #groceryspecials #weeklysavings #weeklyspecials #grocery #abarrotes #carniceria #mariscos #seafood #produce #frutasyverduras #ahorros #ofertas"}
@@ -56,6 +56,21 @@ INITIAL_BASE_CAPTIONS = {
             'durationTextPattern': "Pricing",
             'location': "1805 Dairy Ave. Corcoran, CA.",
             'baseHashtags': "#SamsFods #Supermarket #CorcoranCA #GroceryDeals #WeeklySpecials #MeatDeals #BeefRoast #ShopLocal"
+        }
+    },
+    # --- UPDATED STORE NAME HERE ---
+    'RRANCH_MARKET': {
+        'WEEKLY_DEAL': {
+            'id': 'rranchmarket_weekly',
+            'name': "RRanch Market (Weekly Deal)",
+            'language': "spanish",
+            'original_example': "🍖 Espinazo de Puerco $2.29 x lb.\nWeekly Deal 06/04-06/17\n...\n#weeklydeals #grocerydeals #groceryspecials",
+            'defaultProduct': "Espinazo de Puerco",
+            'defaultPrice': "$2.29 x lb.",
+            'dateFormat': "MM/DD-MM/DD",
+            'durationTextPattern': "Weekly Deal",
+            'location': "RRanch Market",
+            'baseHashtags': "#RRanchMarket #OfertasSemanales #weeklydeals #grocerydeals #groceryspecials #carniceria"
         }
     }
 }
