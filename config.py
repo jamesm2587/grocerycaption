@@ -43,8 +43,8 @@ def load_and_configure_api():
 
     try:
         genai.configure(api_key=api_key)
-        vision_model = genai.GenerativeModel('gemini-2.0-flash')
-        text_model = genai.GenerativeModel('gemini-2.0-flash')
+        vision_model = genai.GenerativeModel('gemma-3n-e4b-it')
+        text_model = genai.GenerativeModel('gemma-3n-e4b-it')
         # You could add a small success message here if running locally and key is found
         # st.sidebar.success("Gemini API configured successfully.") # Example
         return vision_model, text_model
