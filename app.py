@@ -773,23 +773,19 @@ def main():
                             if not caption_structure:
                                 current_error += f" Caption structure for '{sale_detail_sub_key}' in '{store_details_key}' not found."
                             else:
-                                # MODIFICATION START: More flexible check for sale-based posts
-                                final_price = get_final_price_string(current_data_item_ref['selectedPriceFormat'], current_data_item_ref['itemPriceValue'], current_data_item_ref['customItemPrice'])
+                                # MODIFICATION START: Conditional validation
                                 is_sale_based_post = caption_structure.get('dateFormat') != ""
-                                # If the template doesn't specify a date format, but a price has been entered, treat it as a sale post.
-                                if not is_sale_based_post and (final_price and not any(x in final_price for x in ["[Price Value]", "[Custom Price]", "[X for $Y Price]", "N/A"])):
-                                    is_sale_based_post = True
                                 
                                 product_display_text = current_data_item_ref.get('itemProduct', 'Unknown Product')
                                 if not product_display_text.strip() or product_display_text == "Unknown Product":
                                     current_error += " Product name missing/unknown."
                                 
+                                final_price = get_final_price_string(current_data_item_ref['selectedPriceFormat'], current_data_item_ref['itemPriceValue'], current_data_item_ref['customItemPrice'])
+                                
                                 if is_sale_based_post:
-                                    if not final_price or any(x in final_price for x in ["[Price Value]", "[Custom Price]", "[X for $Y Price]", "N/A"]):
+                                    if not final_price or "[Price Value]" in final_price or "[Custom Price]" in final_price or "[X for $Y Price]" in final_price or "N/A" in final_price:
                                         current_error += " Invalid/missing price."
-                                    # Use a default date format if the template one is missing but we determined it's a sale
-                                    date_format_to_use = caption_structure.get('dateFormat') or "MM/DD-MM/DD"
-                                    display_dates = format_dates_for_caption_context(current_data_item_ref['dateRange']['start'], current_data_item_ref['dateRange']['end'], date_format_to_use, caption_structure['language'])
+                                    display_dates = format_dates_for_caption_context(current_data_item_ref['dateRange']['start'], current_data_item_ref['dateRange']['end'], caption_structure['dateFormat'], caption_structure['language'])
                                     if "MISSING" in display_dates or "INVALID" in display_dates:
                                         current_error += " Invalid dates for caption."
                                 
@@ -854,10 +850,12 @@ def main():
                                     final_prompt_for_caption = "\n".join(prompt_list)
                                     try:
                                         generated_text = generate_caption_with_gemini(TEXT_MODEL, final_prompt_for_caption)
-                                        current_data_item_ref['generatedCaption'] = generated_text; generated_count +=1
+                                        cleaned_text = generated_text.replace('*', '')
+                                        current_data_item_ref['generatedCaption'] = cleaned_text
+                                        generated_count +=1
                                         if not reference_caption_for_current_store_batch:
-                                            reference_caption_for_current_store_batch = generated_text
-                                        st.session_state.last_caption_by_store[store_key_for_batch] = generated_text
+                                            reference_caption_for_current_store_batch = cleaned_text
+                                        st.session_state.last_caption_by_store[store_key_for_batch] = cleaned_text
                                     except Exception as e:
                                         current_error += f" Caption API error: {str(e)}"
                         current_data_item_ref['analysisError'] = current_error.strip() 
@@ -936,41 +934,47 @@ def main():
                             data_item['selectedStoreKey'] = new_selected_store_key; st.rerun()
                     else: st.text("No stores available to select.")
                     
-                    # MODIFICATION START: Always show Price and Date fields by removing the conditional
-                    price_fmt_map = {p['value']: p['label'] for p in PREDEFINED_PRICES}
-                    current_price_format = data_item.get('selectedPriceFormat', PREDEFINED_PRICES[1]['value'] if PREDEFINED_PRICES and len(PREDEFINED_PRICES) > 1 else (PREDEFINED_PRICES[0]['value'] if PREDEFINED_PRICES else "CUSTOM"))
-                    if PREDEFINED_PRICES:
-                        try: p_fmt_idx = list(price_fmt_map.keys()).index(current_price_format)
-                        except ValueError: p_fmt_idx = 1 if len(PREDEFINED_PRICES) > 1 else 0 
-                        selected_price_format_val = st.selectbox("Price Format", options=list(price_fmt_map.keys()), format_func=lambda x: price_fmt_map[x], index=p_fmt_idx, key=f"{item_key_prefix}_pfmt_ind")
-                        if selected_price_format_val != data_item.get('selectedPriceFormat'):
-                            data_item['selectedPriceFormat'] = selected_price_format_val; st.rerun()
-                        if selected_price_format_val == "CUSTOM":
-                            new_custom_p = st.text_input("Custom Price Text", value=data_item.get('customItemPrice', ''), key=f"{item_key_prefix}_pcustom_ind")
-                            if new_custom_p != data_item.get('customItemPrice', ''): data_item['customItemPrice'] = new_custom_p; st.rerun()
-                        elif selected_price_format_val == "X for $Y":
-                            new_xfory_p = st.text_input("Price (e.g., 2 for $5.00)", value=data_item.get('itemPriceValue', ''), key=f"{item_key_prefix}_pxfory_ind")
-                            if new_xfory_p != data_item.get('itemPriceValue', ''): data_item['itemPriceValue'] = new_xfory_p; st.rerun()
-                        else: 
-                            new_pval = st.text_input("Price Value (e.g., 1.99 or 79)", value=data_item.get('itemPriceValue', ''), key=f"{item_key_prefix}_pval_ind")
-                            if new_pval != data_item.get('itemPriceValue', ''): data_item['itemPriceValue'] = new_pval; st.rerun()
-                    else: st.text("No price formats defined.")
+                    # Get the caption structure to conditionally show price/date fields
+                    temp_store_key = data_item.get('selectedStoreKey')
+                    temp_store_info = current_combined_captions.get(temp_store_key, {})
+                    temp_sub_key = list(temp_store_info.keys())[0] if temp_store_info else None
+                    temp_caption_structure = temp_store_info.get(temp_sub_key, {})
+                    is_sale_based_ui = temp_caption_structure.get('dateFormat') != ""
 
-                    date_c1, date_c2 = st.columns(2)
-                    with date_c1:
-                        try: s_dt_val = datetime.datetime.strptime(data_item['dateRange']['start'], "%Y-%m-%d").date()
-                        except: s_dt_val = datetime.date.today() 
-                        new_s_dt = st.date_input("Start Date", value=s_dt_val, key=f"{item_key_prefix}_sdate_ind")
-                        if new_s_dt.strftime("%Y-%m-%d") != data_item['dateRange']['start']:
-                            data_item['dateRange']['start'] = new_s_dt.strftime("%Y-%m-%d"); st.rerun()
-                    with date_c2:
-                        try: e_dt_val = datetime.datetime.strptime(data_item['dateRange']['end'], "%Y-%m-%d").date()
-                        except: e_dt_val = datetime.date.today() + datetime.timedelta(days=6) 
-                        current_start_date_for_end_picker = datetime.datetime.strptime(data_item['dateRange']['start'], "%Y-%m-%d").date()
-                        new_e_dt = st.date_input("End Date", value=e_dt_val, key=f"{item_key_prefix}_edate_ind", min_value=current_start_date_for_end_picker)
-                        if new_e_dt.strftime("%Y-%m-%d") != data_item['dateRange']['end']:
-                            data_item['dateRange']['end'] = new_e_dt.strftime("%Y-%m-%d"); st.rerun()
-                    # MODIFICATION END
+                    if is_sale_based_ui:
+                        price_fmt_map = {p['value']: p['label'] for p in PREDEFINED_PRICES}
+                        current_price_format = data_item.get('selectedPriceFormat', PREDEFINED_PRICES[1]['value'] if PREDEFINED_PRICES and len(PREDEFINED_PRICES) > 1 else (PREDEFINED_PRICES[0]['value'] if PREDEFINED_PRICES else "CUSTOM"))
+                        if PREDEFINED_PRICES:
+                            try: p_fmt_idx = list(price_fmt_map.keys()).index(current_price_format)
+                            except ValueError: p_fmt_idx = 1 if len(PREDEFINED_PRICES) > 1 else 0 
+                            selected_price_format_val = st.selectbox("Price Format", options=list(price_fmt_map.keys()), format_func=lambda x: price_fmt_map[x], index=p_fmt_idx, key=f"{item_key_prefix}_pfmt_ind")
+                            if selected_price_format_val != data_item.get('selectedPriceFormat'):
+                                data_item['selectedPriceFormat'] = selected_price_format_val; st.rerun()
+                            if selected_price_format_val == "CUSTOM":
+                                new_custom_p = st.text_input("Custom Price Text", value=data_item.get('customItemPrice', ''), key=f"{item_key_prefix}_pcustom_ind")
+                                if new_custom_p != data_item.get('customItemPrice', ''): data_item['customItemPrice'] = new_custom_p; st.rerun()
+                            elif selected_price_format_val == "X for $Y":
+                                new_xfory_p = st.text_input("Price (e.g., 2 for $5.00)", value=data_item.get('itemPriceValue', ''), key=f"{item_key_prefix}_pxfory_ind")
+                                if new_xfory_p != data_item.get('itemPriceValue', ''): data_item['itemPriceValue'] = new_xfory_p; st.rerun()
+                            else: 
+                                new_pval = st.text_input("Price Value (e.g., 1.99 or 79)", value=data_item.get('itemPriceValue', ''), key=f"{item_key_prefix}_pval_ind")
+                                if new_pval != data_item.get('itemPriceValue', ''): data_item['itemPriceValue'] = new_pval; st.rerun()
+                        else: st.text("No price formats defined.")
+
+                        date_c1, date_c2 = st.columns(2)
+                        with date_c1:
+                            try: s_dt_val = datetime.datetime.strptime(data_item['dateRange']['start'], "%Y-%m-%d").date()
+                            except: s_dt_val = datetime.date.today() 
+                            new_s_dt = st.date_input("Start Date", value=s_dt_val, key=f"{item_key_prefix}_sdate_ind")
+                            if new_s_dt.strftime("%Y-%m-%d") != data_item['dateRange']['start']:
+                                data_item['dateRange']['start'] = new_s_dt.strftime("%Y-%m-%d"); st.rerun()
+                        with date_c2:
+                            try: e_dt_val = datetime.datetime.strptime(data_item['dateRange']['end'], "%Y-%m-%d").date()
+                            except: e_dt_val = datetime.date.today() + datetime.timedelta(days=6) 
+                            current_start_date_for_end_picker = datetime.datetime.strptime(data_item['dateRange']['start'], "%Y-%m-%d").date()
+                            new_e_dt = st.date_input("End Date", value=e_dt_val, key=f"{item_key_prefix}_edate_ind", min_value=current_start_date_for_end_picker)
+                            if new_e_dt.strftime("%Y-%m-%d") != data_item['dateRange']['end']:
+                                data_item['dateRange']['end'] = new_e_dt.strftime("%Y-%m-%d"); st.rerun()
                 
                 caption_loading_key = f"{item_key_prefix}_caption_loading_ind"
                 if caption_loading_key not in st.session_state: st.session_state[caption_loading_key] = False 
@@ -1023,23 +1027,18 @@ def exec_single_item_generation(index):
         if not caption_structure:
             current_error += f" Caption structure for '{sale_detail_sub_key}' under '{store_details_key}' not found."
         else:
-            # MODIFICATION START: More flexible check for sale-based posts
-            final_price = get_final_price_string(data_item['selectedPriceFormat'], data_item['itemPriceValue'], data_item['customItemPrice'])
             is_sale_based_post = caption_structure.get('dateFormat') != ""
-            # If the template doesn't specify a date format, but a price has been entered, treat it as a sale post.
-            if not is_sale_based_post and (final_price and not any(x in final_price for x in ["[Price Value]", "[Custom Price]", "[X for $Y Price]", "N/A"])):
-                is_sale_based_post = True
-
+            
             product_display_text = data_item.get('itemProduct', 'Unknown Product')
             if not product_display_text.strip() or product_display_text == "Unknown Product":
                 current_error += " Product name missing/unknown."
             
+            final_price = get_final_price_string(data_item['selectedPriceFormat'], data_item['itemPriceValue'], data_item['customItemPrice'])
+            
             if is_sale_based_post:
-                if not final_price or any(x in final_price for x in ["[Price Value]", "[Custom Price]", "[X for $Y Price]", "N/A"]):
+                if not final_price or "[Price Value]" in final_price or "[Custom Price]" in final_price or "[X for $Y Price]" in final_price or "N/A" in final_price:
                     current_error += " Invalid/missing price."
-                # Use a default date format if the template one is missing but we determined it's a sale
-                date_format_to_use = caption_structure.get('dateFormat') or "MM/DD-MM/DD"
-                display_dates = format_dates_for_caption_context(data_item['dateRange']['start'], data_item['dateRange']['end'], date_format_to_use, caption_structure['language'])
+                display_dates = format_dates_for_caption_context(data_item['dateRange']['start'], data_item['dateRange']['end'], caption_structure['dateFormat'], caption_structure['language'])
                 if "MISSING" in display_dates or "INVALID" in display_dates:
                     current_error += " Invalid date range for caption."
 
@@ -1105,8 +1104,9 @@ def exec_single_item_generation(index):
                 final_prompt_for_caption = "\n".join(prompt_list)
                 try:
                     generated_text = generate_caption_with_gemini(TEXT_MODEL, final_prompt_for_caption)
-                    data_item['generatedCaption'] = generated_text
-                    st.session_state.last_caption_by_store[store_details_key] = generated_text
+                    cleaned_text = generated_text.replace('*', '')
+                    data_item['generatedCaption'] = cleaned_text
+                    st.session_state.last_caption_by_store[store_details_key] = cleaned_text
                 except Exception as e:
                     current_error += f" Caption API error: {str(e)}"
     
