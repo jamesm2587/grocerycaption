@@ -827,7 +827,7 @@ def main():
                                         prompt_list.append(f"Strongly emphasize the {holiday_ctx} theme and use relevant emojis.")
                                     
                                     if reference_caption_for_current_store_batch:
-                                        prompt_list.extend([f"\nIMPORTANT STYLISTIC NOTE: For consistency with other posts for this store, please try to follow a similar structure, tone, and overall style to the following reference caption. Adapt product details, price, and specific emojis for the current item, but keep the general formatting and sentence flow consistent with the reference.", f"REFERENCE CAPTION START:\n{reference_caption_for_current_store_batch}\nREFERENCE CAPTION END\nEnsure your new caption is unique and accurate for the current product."])
+                                        prompt_list.extend([f"\nIMPORTANT STYLISTIC NOTE: For consistency with other posts for this store, please try to follow a similar structure, tone, and overall style to the following reference caption. Adapt product details, price, and specific emojis for the current item, but keep the general formatting and sentence flow consistent with the reference.", f"REFERENCE CAPTION START:\n{reference_caption_for_current_store_batch}\nREFERENCE CAPTION END\nWhen generating the new caption, please provide a creative and different alternative to the reference caption."])
                                     
                                     prompt_list.extend([f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"", "\nCaption Requirements:", "- Unique, engaging, ready for social media."])
 
@@ -1080,7 +1080,7 @@ def exec_single_item_generation(index):
                 
                 reference_caption_for_store = st.session_state.last_caption_by_store.get(store_details_key)
                 if reference_caption_for_store:
-                    prompt_list.extend([f"\nIMPORTANT STYLISTIC NOTE: For consistency with other posts for this store, please try to follow a similar structure, tone, and overall style to the following reference caption. Adapt product details, price, and specific emojis for the current item, but keep the general formatting and sentence flow consistent with the reference.", f"REFERENCE CAPTION START:\n{reference_caption_for_store}\nREFERENCE CAPTION END\nEnsure your new caption is unique and accurate for the current product."])
+                    prompt_list.extend([f"\nIMPORTANT STYLISTIC NOTE: For consistency with other posts for this store, please try to follow a similar structure, tone, and overall style to the following reference caption. Adapt product details, price, and specific emojis for the current item, but keep the general formatting and sentence flow consistent with the reference.", f"REFERENCE CAPTION START:\n{reference_caption_for_store}\nREFERENCE CAPTION END\nWhen generating the new caption, please provide a creative and different alternative to the reference caption."])
                 
                 prompt_list.extend([f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"", "\nCaption Requirements:", "- Unique, engaging, ready for social media."])
 
