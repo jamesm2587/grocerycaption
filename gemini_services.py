@@ -58,5 +58,6 @@ IMAGE_ANALYSIS_PROMPT_TEMPLATE = (
     "Product Category: [General category like Produce, Dairy, Meat, Bakery, Pantry, Frozen, Beverages, Snacks, Household. If multiple distinct items, categorize the primary one or provide a comma-separated list if appropriate for a single ad item. Default to 'General Grocery' if unclear.]\n"
     "Detected Brands/Logos: [List any recognizable product brands or logos visible, e.g., Coca-Cola, Lay's. If none, state 'Not found'. Comma-separate if multiple.]\n"
     "If a field is not found or unclear for any specific line item above, state 'Not found' for that field and only that field."
+    "Do not include any * in the caption, as it looks weird."
 )
 
