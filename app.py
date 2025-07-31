@@ -29,122 +29,109 @@ def load_custom_ui():
     """Injects custom CSS for a more appealing UI."""
     st.markdown("""
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
             /* --- GENERAL --- */
-            html, body, [class*="st-"] {
-                font-family: 'Inter', sans-serif;
-            }
             .stApp {
-                background-color: #141414; /* Dark grey background */
+                /* Theme is set in .streamlit/config.toml */
             }
             .main .block-container {
                 padding-top: 2rem;
                 padding-bottom: 2rem;
             }
             h1, h2, h3, h4, h5, h6 {
-                font-weight: 700; /* Bolder headers */
-                color: #FFFFFF;
+                font-weight: 600; /* Bolder headers */
             }
             
             /* --- TITLE --- */
             h1 { /* Main title style */
                 text-align: center;
-                font-size: 2.8rem;
-                letter-spacing: -1.5px;
+                font-size: 2.5rem; /* Adjusted for better visual hierarchy */
+                letter-spacing: -1px;
                 padding-bottom: 1rem;
-                border-bottom: 1px solid #333333;
-                margin-bottom: 2rem;
+                border-bottom: 1px solid #2a2d34; /* Use a subtle border from your theme */
+                margin-bottom: 2rem; /* More space after title */
             }
 
             /* --- BUTTONS --- */
             .stButton > button {
                 border-radius: 8px;
-                padding: 12px 24px;
+                padding: 10px 20px;
                 font-weight: 600;
                 transition: all 0.2s ease-in-out;
-                border-width: 1px;
-                border-color: #2c7dfa;
+                border-width: 1px; /* Ensure border is visible for secondary */
             }
             /* Primary Button (e.g., Analyze) */
             div[data-testid="stButton"] > button[kind="primary"] {
-                 background-color: #2c7dfa; /* Primary blue */
+                 background-color: #6c5ce7; /* primaryColor from theme */
                  color: white;
-                 border: none;
+                 border: none; /* Primary buttons might not need a border if background is strong */
             }
             div[data-testid="stButton"] > button[kind="primary"]:hover {
-                 background-color: #5a9eff; /* Lighter blue for hover */
-                 transform: translateY(-2px);
-                 box-shadow: 0 4px 12px rgba(44, 125, 250, 0.2);
+                 background-color: #5848c7; /* Darker shade for hover */
             }
              /* Secondary Button (e.g., Remove, Generate for item) */
             div[data-testid="stButton"] > button[kind="secondary"] {
-                background-color: transparent;
-                border-color: #4A4D56;
-                color: #FAFAFA;
+                border-color: #4A4D56; /* A slightly lighter border than darkest background */
             }
             div[data-testid="stButton"] > button[kind="secondary"]:hover {
-                border-color: #2c7dfa;
-                background-color: rgba(44, 125, 250, 0.1);
-                color: #2c7dfa;
+                border-color: #6c5ce7; /* primaryColor on hover */
+                color: #6c5ce7; /* primaryColor text on hover */
             }
 
             /* --- FILE UPLOADER --- */
             div[data-testid="stFileUploader"] {
-                border: 2px dashed #4A4D56;
-                background-color: #222222;
+                border: 2px dashed #4A4D56; /* Dashed border */
+                background-color: #1a1c22; /* Darker than secondaryBg for contrast */
                 border-radius: 12px;
                 padding: 1.5rem;
             }
-            div[data-testid="stFileUploader"] label {
+            div[data-testid="stFileUploader"] label { /* Uploader label */
                 font-size: 1.1rem;
                 font-weight: 600;
-                color: #FAFAFA;
             }
 
             /* --- SIDEBAR --- */
             div[data-testid="stSidebar"] > div:first-child {
-                background-color: #1a1c22;
-                border-right: 1px solid #333333;
+                background-color: #1a1c22; /* Darker shade for sidebar */
+                border-right: 1px solid #2a2d34; /* Subtle separator */
             }
 
             /* --- Expander in Sidebar --- */
-            div[data-testid="stSidebar"] div[data-testid="stExpander"] {
-                 border: 1px solid #333333;
+            div[data-testid="stSidebar"] div[data-testid="stExpander"] { /* Target expander in sidebar specifically */
+                 border: 1px solid #2a2d34;
                  border-radius: 8px;
-                 background-color: #222222;
-                 margin-bottom: 1rem;
+                 background-color: #262730; /* secondaryBackgroundColor */
+                 margin-bottom: 1rem; /* Add some space below sidebar expanders */
             }
-            div[data-testid="stSidebar"] div[data-testid="stExpander"] summary {
+            div[data-testid="stSidebar"] div[data-testid="stExpander"] summary { /* Expander header */
                 font-weight: 600;
-                color: #FAFAFA;
+                color: #FAFAFA; /* textColor */
             }
             
             /* --- Expander in Main Content (File Previews) --- */
             .main div[data-testid="stExpander"] {
-                 border: 1px solid #333333;
+                 border: 1px solid #2a2d34;
                  border-radius: 8px;
-                 background-color: #222222;
+                 background-color: #1a1c22; /* Slightly darker for main content expanders */
                  margin-bottom: 1.5rem;
             }
             .main div[data-testid="stExpander"] summary {
                 font-weight: 600;
                 color: #FAFAFA;
-                padding: 0.5rem 0rem;
+                padding: 0.5rem 0rem; /* Add some padding to summary */
             }
             .main div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {
-                padding-top: 1rem;
+                padding-top: 1rem; /* Space between summary and content */
             }
 
 
             /* --- BORDERED CONTAINERS / CARDS for individual items --- */
              div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div {
-                background-color: #222222;
+                background-color: #1a1c22; 
                 border-radius: 12px;
-                box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-                border: 1px solid #333333;
-                padding: 1.5rem;
-                margin-bottom: 1.5rem;
+                box-shadow: 0 8px 16px rgba(0,0,0,0.3); 
+                border: 1px solid #2a2d34; 
+                padding: 1.5rem; /* Added more padding inside the card */
+                margin-bottom: 1.5rem; /* Space between cards */
             }
             
             /* --- Form Elements Spacing within Cards --- */
@@ -153,79 +140,78 @@ def load_custom_ui():
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stSelectbox,
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stDateInput,
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stCheckbox {
-                margin-bottom: 1rem;
+                margin-bottom: 1rem; /* Consistent bottom margin for form elements */
             }
 
             /* --- Labels for Form Elements --- */
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div label {
-                margin-bottom: 0.3rem;
-                display: inline-block;
-                font-weight: 500;
-                color: #CCCCCC;
+                margin-bottom: 0.3rem; /* Space between label and input */
+                display: inline-block; /* Allows margin-bottom to work as expected */
+                font-weight: 500; /* Slightly less bold than headers */
             }
             
             /* --- Text Input & Text Area --- */
             .stTextInput input, .stTextArea textarea {
                 border-radius: 8px !important;
                 border: 1px solid #4A4D56 !important;
-                background-color: #333333 !important;
-                color: #FAFAFA !important;
-                padding: 0.5rem 0.75rem !important;
+                background-color: #262730 !important; 
+                color: #FAFAFA !important; 
+                padding: 0.5rem 0.75rem !important; /* Adjust padding for input fields */
             }
             .stTextInput input:focus, .stTextArea textarea:focus {
-                border-color: #2c7dfa !important;
-                box-shadow: 0 0 0 0.2rem rgba(44, 125, 250, 0.25) !important;
+                border-color: #6c5ce7 !important; 
+                box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25) !important; 
             }
             
             /* --- Selectbox --- */
             .stSelectbox > div[data-baseweb="select"] > div {
                 border-radius: 8px !important;
                 border: 1px solid #4A4D56 !important;
-                background-color: #333333 !important;
-                padding-top: 2px !important;
+                background-color: #262730 !important;
+                padding-top: 2px !important; /* Fine-tune selectbox padding */
                 padding-bottom: 2px !important;
             }
              .stSelectbox > div[data-baseweb="select"] > div:focus-within {
-                 border-color: #2c7dfa !important;
-                 box-shadow: 0 0 0 0.2rem rgba(44, 125, 250, 0.25) !important;
+                 border-color: #6c5ce7 !important;
+                 box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25) !important;
              }
 
             /* --- Date Input --- */
             .stDateInput input {
                  border-radius: 8px !important;
                  border: 1px solid #4A4D56 !important;
-                 background-color: #333333 !important;
-                 padding: 0.5rem 0.75rem !important;
+                 background-color: #262730 !important;
+                 padding: 0.5rem 0.75rem !important; /* Adjust padding */
             }
             .stDateInput input:focus {
-                 border-color: #2c7dfa !important;
-                 box-shadow: 0 0 0 0.2rem rgba(44, 125, 250, 0.25) !important;
+                 border-color: #6c5ce7 !important;
+                 box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25) !important;
             }
             
             /* --- Checkbox --- */
             .stCheckbox label {
                 font-size: 1rem;
-                padding-top: 0.25rem;
-                color: #FAFAFA;
+                padding-top: 0.25rem; /* Align checkbox label better */
             }
             
             /* Style for st.video to make it fit container width */
             .stVideo {
                 width: 100%;
-                margin-bottom: 0.5rem;
+                margin-bottom: 0.5rem; /* Space below video in preview grid */
             }
             .stVideo video {
                 width: 100%;
-                border-radius: 8px;
+                border-radius: 8px; 
             }
             
             /* Specific Spacing for Two-Column Date Inputs */
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div [data-testid="stHorizontalBlock"] .stDateInput {
-                 margin-bottom: 0;
+                 margin-bottom: 0; /* Remove bottom margin if they are side-by-side */
             }
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div [data-testid="stHorizontalBlock"] {
-                 margin-bottom: 1rem;
+                 margin-bottom: 1rem; /* Ensure the row of date pickers has overall margin */
             }
+
 
         </style>
     """, unsafe_allow_html=True)
@@ -1128,3 +1114,4 @@ def exec_single_item_generation(index):
 
 if __name__ == "__main__":
     main()
+
