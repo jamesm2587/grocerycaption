@@ -402,7 +402,7 @@ def main():
     st.set_page_config(layout="wide", page_title="Caption Generator")
     load_custom_ui()  # Load the new UI styles at the very beginning
 
-    st.title("✨ Social Media Caption Generator ✨")
+    st.title(" Social Media Caption Generator ")
 
     initialize_session_state() # Initialize session state variables
     current_combined_captions = get_combined_captions() # Get current combined captions data
