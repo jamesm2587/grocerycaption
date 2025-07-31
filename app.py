@@ -782,17 +782,19 @@ def main():
                                 
                                 final_price = get_final_price_string(current_data_item_ref['selectedPriceFormat'], current_data_item_ref['itemPriceValue'], current_data_item_ref['customItemPrice'])
                                 
+                                display_dates = ""
                                 if is_sale_based_post:
                                     if not final_price or "[Price Value]" in final_price or "[Custom Price]" in final_price or "[X for $Y Price]" in final_price or "N/A" in final_price:
                                         current_error += " Invalid/missing price."
                                     display_dates = format_dates_for_caption_context(current_data_item_ref['dateRange']['start'], current_data_item_ref['dateRange']['end'], caption_structure['dateFormat'], caption_structure['language'])
                                     if "MISSING" in display_dates or "INVALID" in display_dates:
-                                        current_error += " Invalid dates for caption."
-                                
+                                        if "Invalid dates for caption." not in current_error:
+                                            current_error += " Invalid dates for caption."
+
                                 can_generate_prompt = True
                                 critical_errors = ["not found.", "missing/unknown."]
                                 if is_sale_based_post:
-                                    critical_errors.extend(["missing price.", "Invalid dates for caption."])
+                                    critical_errors.extend(["missing price."])
                                 
                                 for err_check in critical_errors:
                                     if err_check in current_error: 
@@ -810,10 +812,9 @@ def main():
                                     prompt_list.append(f"Product to feature: {temp_product_display_text}")
 
                                     if is_sale_based_post:
-                                        prompt_list.extend([
-                                            f"Price: {final_price}",
-                                            f"Sale Dates (for display in caption): {display_dates}. (Actual period: {current_data_item_ref['dateRange']['start']} to {current_data_item_ref['dateRange']['end']})."
-                                        ])
+                                        prompt_list.append(f"Price: {final_price}")
+                                        if "MISSING" not in display_dates and "INVALID" not in display_dates:
+                                            prompt_list.append(f"Sale Dates (for display in caption): {display_dates}. (Actual period: {current_data_item_ref['dateRange']['start']} to {current_data_item_ref['dateRange']['end']}).")
 
                                     if holiday_ctx and is_sale_based_post: prompt_list.append(f"Relevant Holiday Context: {holiday_ctx}.")
                                     
@@ -832,7 +833,9 @@ def main():
                                     prompt_list.extend([f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"", "\nCaption Requirements:", "- Unique, engaging, ready for social media."])
 
                                     if is_sale_based_post:
-                                        prompt_list.append(f"- Feature the product on sale by stating its name (and brand like '{detected_brands}' if relevant and not 'N/A') immediately followed by or closely linked to its price. For example: '{temp_product_display_text} is now {final_price}!'. Also, clearly include the sale dates (as per 'display_dates'), and the store location.")
+                                        prompt_list.append(f"- Feature the product on sale by stating its name (and brand like '{detected_brands}' if relevant and not 'N/A') immediately followed by or closely linked to its price. For example: '{temp_product_display_text} is now {final_price}!'. Also, clearly include the store location.")
+                                        if "MISSING" not in display_dates and "INVALID" not in display_dates:
+                                            prompt_list.append(f"- Clearly include the sale dates (as per 'display_dates').")
                                     else:
                                         prompt_list.append(f"- Feature the product by describing it in an appealing way, for example: 'Come try our delicious {temp_product_display_text} today!'.")
 
@@ -844,7 +847,7 @@ def main():
                                     prompt_list.append(f"- Include these base hashtags: {base_hashtags}. Add 2-3 creative hashtags. Also, 1-2 hashtags for each: {', '.join(hashtag_details)}.")
                                     prompt_list.extend([f"- Store's main name ({caption_structure['name'].split('(')[0].strip()}) should be prominent if location \"{caption_structure['location']}\" is just a city/area.", "- Good formatting with line breaks."])
                                     
-                                    if is_sale_based_post and caption_structure.get('durationTextPattern'):
+                                    if is_sale_based_post and caption_structure.get('durationTextPattern') and "MISSING" not in display_dates and "INVALID" not in display_dates:
                                         prompt_list.append(f"- Naturally integrate promotional phrase \"{caption_structure['durationTextPattern']}\" with sale dates {display_dates} if it makes sense.")
                                     
                                     final_prompt_for_caption = "\n".join(prompt_list)
@@ -1035,17 +1038,19 @@ def exec_single_item_generation(index):
             
             final_price = get_final_price_string(data_item['selectedPriceFormat'], data_item['itemPriceValue'], data_item['customItemPrice'])
             
+            display_dates = ""
             if is_sale_based_post:
                 if not final_price or "[Price Value]" in final_price or "[Custom Price]" in final_price or "[X for $Y Price]" in final_price or "N/A" in final_price:
                     current_error += " Invalid/missing price."
                 display_dates = format_dates_for_caption_context(data_item['dateRange']['start'], data_item['dateRange']['end'], caption_structure['dateFormat'], caption_structure['language'])
                 if "MISSING" in display_dates or "INVALID" in display_dates:
-                    current_error += " Invalid date range for caption."
+                    if "Invalid date range for caption." not in current_error:
+                        current_error += " Invalid date range for caption."
 
             can_generate_prompt = True
             critical_errors = ["not found.", "missing/unknown."]
             if is_sale_based_post:
-                critical_errors.extend(["missing price.", "Invalid date range for caption."])
+                critical_errors.extend(["missing price."])
 
             for err_check in critical_errors:
                 if err_check in current_error:
@@ -1062,10 +1067,9 @@ def exec_single_item_generation(index):
                 prompt_list.append(f"Product to feature: {temp_product_display_text}")
 
                 if is_sale_based_post:
-                    prompt_list.extend([
-                        f"Price: {final_price}",
-                        f"Sale Dates (for display in caption): {display_dates}. (Actual period: {data_item['dateRange']['start']} to {data_item['dateRange']['end']})."
-                    ])
+                    prompt_list.append(f"Price: {final_price}")
+                    if "MISSING" not in display_dates and "INVALID" not in display_dates:
+                        prompt_list.append(f"Sale Dates (for display in caption): {display_dates}. (Actual period: {data_item['dateRange']['start']} to {data_item['dateRange']['end']}).")
                 
                 if holiday_ctx: prompt_list.append(f"Relevant Holiday Context: {holiday_ctx}.")
                 
@@ -1085,7 +1089,9 @@ def exec_single_item_generation(index):
                 prompt_list.extend([f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"", "\nCaption Requirements:", "- Unique, engaging, ready for social media."])
 
                 if is_sale_based_post:
-                    prompt_list.append(f"- Feature the product on sale by stating its name (and brand like '{detected_brands}' if relevant and not 'N/A') immediately followed by or closely linked to its price. For example: '{temp_product_display_text} is now {final_price}!'. Also, clearly include the sale dates (as per 'display_dates'), and the store location.")
+                    prompt_list.append(f"- Feature the product on sale by stating its name (and brand like '{detected_brands}' if relevant and not 'N/A') immediately followed by or closely linked to its price. For example: '{temp_product_display_text} is now {final_price}!'. Also, clearly include the store location.")
+                    if "MISSING" not in display_dates and "INVALID" not in display_dates:
+                        prompt_list.append(f"- Clearly include the sale dates (as per 'display_dates').")
                 else:
                     prompt_list.append(f"- Feature the product by describing it in an appealing way, for example: 'Come try our delicious {temp_product_display_text} today!'. Do not mention price or sale dates.")
 
@@ -1098,7 +1104,7 @@ def exec_single_item_generation(index):
                 
                 prompt_list.extend([f"- Store's main name ({caption_structure['name'].split('(')[0].strip()}) should be prominent if location \"{caption_structure['location']}\" is just a city/area.", "- Good formatting with line breaks."])
                 
-                if is_sale_based_post and caption_structure.get('durationTextPattern'):
+                if is_sale_based_post and caption_structure.get('durationTextPattern') and "MISSING" not in display_dates and "INVALID" not in display_dates:
                     prompt_list.append(f"- Naturally integrate promotional phrase \"{caption_structure['durationTextPattern']}\" with sale dates {display_dates} if it makes sense.")
                 
                 final_prompt_for_caption = "\n".join(prompt_list)
@@ -1114,4 +1120,3 @@ def exec_single_item_generation(index):
 
 if __name__ == "__main__":
     main()
-
