@@ -55,6 +55,6 @@ IMAGE_ANALYSIS_PROMPT_TEMPLATE = (
     "Store Name: [Use visual logos as the primary clue, making sure to to notice any small letters that might not make sense for example the I in Mi Tiendita. If you see a prominent logo (like a large letter 'R'), you MUST prioritize identifying a store with that letter (e.g., 'RRanch Market'), even if the full text is not perfectly clear. Extract the most likely store name based on this rule.]\n"
     "Promotional Text: [Any other relevant promotional phrases or taglines, like '3 Days Only', 'Special Offer']\n"
     "Product Category: [General category like Produce, Dairy, Meat, Bakery, Pantry, Frozen, Beverages, Snacks, Household. If multiple distinct items, categorize the primary one or provide a comma-separated list if appropriate for a single ad item. Default to 'General Grocery' if unclear.]\n"
-    "Detected Brands/Logos: [List any recognizable product brands or logos visible, e.g., Coca-Cola, Lay's. Please also incorporate the brand name in a very cohesive way. If none, state 'Not found'. Comma-separate if multiple.]\n"
+    "Detected Brands/Logos: [List any recognizable product brands or logos visible, e.g., Coca-Cola, Lay's. Please also incorporate the brand name in a very cohesive way. Please don't say (featuring) If none, state 'Not found'. Comma-separate if multiple.]\n"
     "If a field is not found or unclear for any specific line item above, state 'Not found' for that field and only that field."
 )
