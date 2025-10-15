@@ -64,7 +64,7 @@ INITIAL_BASE_CAPTIONS = {
             'id': 'rranchmarket_weekly',
             'name': "RRanch Market (Weekly Deal)",
             'language': "spanish",
-            'original_example': "🍖 Espinazo de Puerco $2.29 x lb.\nWeekly Deal 06/04-06/17\n...\n#weeklydeals #grocerydeals #groceryspecials",
+            'original_example': "Espinazo de Puerco $2.29 x lb.\nWeekly Deal 06/04-06/17\n...\n#weeklydeals #grocerydeals #groceryspecials",
             'defaultProduct': "Espinazo de Puerco",
             'defaultPrice': "$2.29 x lb.",
             'dateFormat': "MM/DD-MM/DD",

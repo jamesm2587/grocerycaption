@@ -402,14 +402,14 @@ def main():
     st.set_page_config(layout="wide", page_title="Caption Generator")
     load_custom_ui()  # Load the new UI styles at the very beginning
 
-    st.title(" Social Media Caption Generator ")
+    st.title("Social Media Caption Generator")
 
     initialize_session_state() # Initialize session state variables
     current_combined_captions = get_combined_captions() # Get current combined captions data
 
     # Check for API model availability
     if not VISION_MODEL or not TEXT_MODEL:
-        st.error("🔴 Gemini Models not available. Please check configuration.")
+        st.error("Gemini Models not available. Please check configuration.")
         st.stop()
 
     # Display any error or info messages from previous actions
@@ -452,7 +452,7 @@ def main():
 
 
         # Add New Store Definition Form
-        with st.expander("➕ Add New Store Definition (Permanent)"): # Permanent implies saving to file
+        with st.expander("Add New Store Definition (Permanent)"): # Permanent implies saving to file
             with st.form("new_store_form", clear_on_submit=True):
                 st.caption("Define a new store and one sale type. Data is saved to custom_stores.json.")
 
@@ -467,7 +467,7 @@ def main():
                 location_form = st.text_input("Location*", help="Store address or general area.")
                 base_hashtags_form = st.text_input("Base Hashtags*", help="Comma-separated, e.g., #MyStore,#Deals")
 
-                submitted_new_store = st.form_submit_button("💾 Save New Store Definition")
+                submitted_new_store = st.form_submit_button("Save New Store Definition")
 
                 if submitted_new_store:
                     if not all([store_name_form, sale_type_key_form, sale_type_display_name_form, language_form, original_example_form, location_form, base_hashtags_form]):
@@ -572,7 +572,7 @@ def main():
                 del st.session_state.analyzed_image_data_set_source_length
             st.rerun()
 
-        action_cols[1].button("🗑️ Remove All & Clear Data", key="remove_all_images_button", on_click=handle_remove_all_images, use_container_width=True, type="secondary")
+        action_cols[1].button("Remove All & Clear Data", key="remove_all_images_button", on_click=handle_remove_all_images, use_container_width=True, type="secondary")
 
         with st.expander("Show Uploaded File Previews", expanded=True):
             previews_per_row = 4
@@ -590,7 +590,7 @@ def main():
                         else:
                             st.caption(f"{file_info['name']} (Preview not available)")
 
-                        st.button("❌ Remove", key=f"remove_btn_{actual_file_index}_{file_info['name']}", on_click=remove_file_at_index, args=(actual_file_index,), use_container_width=True, type="secondary")
+                        st.button("Remove", key=f"remove_btn_{actual_file_index}_{file_info['name']}", on_click=remove_file_at_index, args=(actual_file_index,), use_container_width=True, type="secondary")
                 for k_empty in range(len(row_files_batch), previews_per_row): cols[k_empty].container(height=50)
         st.markdown("---")
 
@@ -731,14 +731,14 @@ def main():
             st.session_state.analyzed_image_data_set_source_length = len(st.session_state.uploaded_files_info)
             progress_bar.empty()
             st.session_state.is_analyzing_images = False
-            st.success(f"✅ File analysis complete for {len(temp_analysis_results)} file(s). Review below.")
+            st.success(f"File analysis complete for {len(temp_analysis_results)} file(s). Review below.")
             st.rerun()
 
 
     # --- Batch Caption Generation ---
     if st.session_state.analyzed_image_data_set and not st.session_state.is_analyzing_images:
         items_selected_for_batch = any(item.get('batch_selected', False) for item in st.session_state.analyzed_image_data_set)
-        if st.button("✍️ Generate Captions for Selected Items", type="primary", use_container_width=True,
+        if st.button("Generate Captions for Selected Items", type="primary", use_container_width=True,
                       disabled=st.session_state.is_batch_generating_captions or not items_selected_for_batch):
             st.session_state.is_batch_generating_captions = True
             generated_count = 0
@@ -799,7 +799,7 @@ def main():
                 data_item['batch_selected'] = st.checkbox("Select for Batch Generation", value=data_item.get('batch_selected', False), key=f"{item_key_prefix}_batch_select")
                 st.markdown(f"##### File: **{data_item.get('original_filename', data_item['id'])}**")
                 if data_item.get('analysisError'):
-                    st.warning(f"💡 Notes/Errors: {data_item['analysisError']}")
+                    st.warning(f"Notes/Errors: {data_item['analysisError']}")
 
                 col1, col2 = st.columns([1, 2])
 
@@ -882,7 +882,7 @@ def main():
 
                 caption_loading_key = f"{item_key_prefix}_caption_loading_ind"
                 if caption_loading_key not in st.session_state: st.session_state[caption_loading_key] = False
-                if st.button(f"✍️ Generate Caption for this Item", key=f"{item_key_prefix}_gen_btn_ind",
+                if st.button(f"Generate Caption for this Item", key=f"{item_key_prefix}_gen_btn_ind",
                               disabled=st.session_state[caption_loading_key] or st.session_state.is_batch_generating_captions,
                               type="secondary", use_container_width=True):
 
@@ -893,20 +893,20 @@ def main():
                     st.rerun()
 
                 if st.session_state[caption_loading_key]:
-                    st.caption("⏳ Generating caption for this item...")
+                    st.caption("Generating caption for this item...")
 
                 if data_item.get('generatedCaption'):
                     caption_text_to_display = data_item['generatedCaption']
-                    st.text_area("📝 Generated Caption:", value=caption_text_to_display, height=200, key=f"{item_key_prefix}_capt_out_display_ind", help="Review and copy below.")
+                    st.text_area("Generated Caption:", value=caption_text_to_display, height=200, key=f"{item_key_prefix}_capt_out_display_ind", help="Review and copy below.")
                     text_area_id = f"copytext_{item_key_prefix}_ind"; feedback_span_id = f"copyfeedback_{item_key_prefix}_ind"
                     escaped_caption_for_html = html_escaper.escape(caption_text_to_display)
-                    copy_button_html_content = f"""<textarea id="{text_area_id}" style="opacity:0.01; height:1px; width:1px; position:absolute; z-index: -1; pointer-events:none;" readonly>{escaped_caption_for_html}</textarea><button onclick="copyToClipboard('{text_area_id}', '{feedback_span_id}')" style="padding: 0.25rem 0.75rem; margin-top: 5px; border-radius: 8px; border: 1px solid #4A4D56; background-color: #262730; color: #FAFAFA; cursor:pointer;">📋 Copy Caption</button><span id="{feedback_span_id}" style="margin-left: 10px; font-size: 0.9em;"></span><script>if(typeof window.copyToClipboard !== 'function'){{window.copyToClipboard=function(elementId,feedbackId){{var copyText=document.getElementById(elementId);var feedbackSpan=document.getElementById(feedbackId);if(!copyText||!feedbackSpan){{if(feedbackSpan)feedbackSpan.innerText="Error: Elements missing.";return;}}copyText.style.display='block';copyText.select();copyText.setSelectionRange(0,99999);copyText.style.display='none';var msg="";try{{var successful=document.execCommand('copy');msg=successful?'Copied!':'Copy failed.';}}catch(err){{msg='Oops, unable to copy.';}}feedbackSpan.innerText=msg;setTimeout(function(){{feedbackSpan.innerText='';}},2500);}}}}</script>"""
+                    copy_button_html_content = f"""<textarea id="{text_area_id}" style="opacity:0.01; height:1px; width:1px; position:absolute; z-index: -1; pointer-events:none;" readonly>{escaped_caption_for_html}</textarea><button onclick="copyToClipboard('{text_area_id}', '{feedback_span_id}')" style="padding: 0.25rem 0.75rem; margin-top: 5px; border-radius: 8px; border: 1px solid #4A4D56; background-color: #262730; color: #FAFAFA; cursor:pointer;">Copy Caption</button><span id="{feedback_span_id}" style="margin-left: 10px; font-size: 0.9em;"></span><script>if(typeof window.copyToClipboard !== 'function'){{window.copyToClipboard=function(elementId,feedbackId){{var copyText=document.getElementById(elementId);var feedbackSpan=document.getElementById(feedbackId);if(!copyText||!feedbackSpan){{if(feedbackSpan)feedbackSpan.innerText="Error: Elements missing.";return;}}copyText.style.display='block';copyText.select();copyText.setSelectionRange(0,99999);copyText.style.display='none';var msg="";try{{var successful=document.execCommand('copy');msg=successful?'Copied!':'Copy failed.';}}catch(err){{msg='Oops, unable to copy.';}}feedbackSpan.innerText=msg;setTimeout(function(){{feedbackSpan.innerText='';}},2500);}}}}</script>"""
                     st_html_component(copy_button_html_content, height=45)
             st.markdown("---")
 
     else:
         if not st.session_state.is_analyzing_images and not st.session_state.uploaded_files_info:
-            st.info("☝️ Upload some image or video files of grocery sale ads to get started, or add a new store definition via the sidebar!")
+            st.info("Upload some image or video files of grocery sale ads to get started, or add a new store definition via the sidebar!")
 
 def exec_single_item_generation(index):
     """Helper function to run caption generation logic for a single item to reduce code duplication."""
