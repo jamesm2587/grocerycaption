@@ -98,7 +98,7 @@ def load_custom_ui():
             /* --- Expander in Sidebar --- */
             div[data-testid="stSidebar"] div[data-testid="stExpander"] { /* Target expander in sidebar specifically */
                  border: 1px solid #2a2d34;
-                 border-radius: 8px;
+                 border-radius: 9px;
                  background-color: #262730; /* secondaryBackgroundColor */
                  margin-bottom: 1rem; /* Add some space below sidebar expanders */
             }
