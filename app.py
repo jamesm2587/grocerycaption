@@ -1087,7 +1087,6 @@ def main():
                     key=include_question_key,
                     help="Check this to automatically include the generated engagement question in your caption"
                 )
-                st.session_state[include_question_key] = include_question
 
                 st.markdown("---")
 
