@@ -44,6 +44,44 @@ def generate_caption_with_gemini(text_model, prompt):
         # Log error or handle more gracefully
         raise Exception(f"Gemini caption generation failed: {str(e)}")
 
+
+def generate_engagement_question_with_gemini(text_model, product_name, product_category, store_name, language="english"):
+    """
+    Generates an engaging question related to the product to increase viewer interaction.
+    Returns a brief one-sentence question or raises an exception.
+    """
+    if not text_model:
+        raise ValueError("Text model is not configured.")
+    
+    try:
+        prompt = f"""Generate a brief, engaging one-sentence question related to the following product that would encourage viewers to comment and interact:
+
+Product: {product_name}
+Category: {product_category}
+Store: {store_name}
+Language: {language}
+
+The question should:
+- Be directly related to the product or cooking/using it
+- Be conversational and engaging
+- Encourage personal responses from viewers
+- Be appropriate for social media
+- Be 1 sentence only
+- Be in {language}
+
+Examples of good engagement questions:
+- "What's your favorite way to cook with green peppers?"
+- "Do you prefer your chicken grilled or fried?"
+- "What's your go-to recipe when you have fresh tomatoes?"
+- "How do you like to season your beef?"
+
+Generate only the question, no additional text:"""
+
+        response = text_model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        raise Exception(f"Gemini engagement question generation failed: {str(e)}")
+
 # Reverted Image Analysis Prompt Template (equivalent to V2)
 IMAGE_ANALYSIS_PROMPT_TEMPLATE = (
     "Analyze this grocery sale image. Extract all details precisely. "
