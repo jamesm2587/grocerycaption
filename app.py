@@ -1113,12 +1113,19 @@ def main():
                     st.session_state[caption_loading_key] = True
                     # Increment counter for next button press
                     st.session_state[caption_counter_key] += 1
-                    # Clear the existing caption to force regeneration
-                    data_item['generatedCaption'] = ""
-                    # Clear any previous errors
-                    data_item['analysisError'] = ""
+                    
                     # Debug info
                     st.write(f"🔄 Generating new caption for item {index} with tone: {st.session_state.global_selected_tone}")
+                    
+                    # Force clear everything related to this item
+                    data_item['generatedCaption'] = ""
+                    data_item['analysisError'] = ""
+                    
+                    # Also clear from last_caption_by_store to force fresh generation
+                    store_details_key = data_item['selectedStoreKey']
+                    if store_details_key in st.session_state.last_caption_by_store:
+                        del st.session_state.last_caption_by_store[store_details_key]
+                    
                     # Re-use the batch generation logic for a single item
                     exec_single_item_generation(index) # Use a helper to avoid code duplication
                     st.session_state[caption_loading_key] = False
@@ -1129,7 +1136,9 @@ def main():
 
                 if data_item.get('generatedCaption'):
                     caption_text_to_display = data_item['generatedCaption']
-                    st.text_area("Generated Caption:", value=caption_text_to_display, height=200, key=f"{item_key_prefix}_capt_out_display_ind", help="Review and copy below.")
+                    # Use dynamic key that includes the caption counter to force refresh
+                    caption_display_key = f"{item_key_prefix}_capt_out_display_ind_{st.session_state.get(f'{item_key_prefix}_caption_counter', 0)}"
+                    st.text_area("Generated Caption:", value=caption_text_to_display, height=200, key=caption_display_key, help="Review and copy below.")
                     text_area_id = f"copytext_{item_key_prefix}_ind"; feedback_span_id = f"copyfeedback_{item_key_prefix}_ind"
                     escaped_caption_for_html = html_escaper.escape(caption_text_to_display)
                     copy_button_html_content = f"""<textarea id="{text_area_id}" style="opacity:0.01; height:1px; width:1px; position:absolute; z-index: -1; pointer-events:none;" readonly>{escaped_caption_for_html}</textarea><button onclick="copyToClipboard('{text_area_id}', '{feedback_span_id}')" style="padding: 0.25rem 0.75rem; margin-top: 5px; border-radius: 8px; border: 1px solid #4A4D56; background-color: #262730; color: #FAFAFA; cursor:pointer;">Copy Caption</button><span id="{feedback_span_id}" style="margin-left: 10px; font-size: 0.9em;"></span><script>if(typeof window.copyToClipboard !== 'function'){{window.copyToClipboard=function(elementId,feedbackId){{var copyText=document.getElementById(elementId);var feedbackSpan=document.getElementById(feedbackId);if(!copyText||!feedbackSpan){{if(feedbackSpan)feedbackSpan.innerText="Error: Elements missing.";return;}}copyText.style.display='block';copyText.select();copyText.setSelectionRange(0,99999);copyText.style.display='none';var msg="";try{{var successful=document.execCommand('copy');msg=successful?'Copied!':'Copy failed.';}}catch(err){{msg='Oops, unable to copy.';}}feedbackSpan.innerText=msg;setTimeout(function(){{feedbackSpan.innerText='';}},2500);}}}}</script>"""
@@ -1240,6 +1249,11 @@ def exec_single_item_generation(index):
             try:
                 generated_text = generate_caption_with_gemini(TEXT_MODEL, final_prompt_for_caption)
                 cleaned_text = generated_text.replace('*', '')
+                
+                # Add timestamp for debugging
+                import datetime
+                timestamp = datetime.datetime.now().strftime("%H:%M:%S")
+                cleaned_text = f"[Generated at {timestamp}] {cleaned_text}"
                 
                 # Add engagement question if available and checkbox is checked
                 include_question_key = f"item_{data_item['id']}_include_question"
