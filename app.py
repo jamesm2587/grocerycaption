@@ -20,7 +20,7 @@ from utils import (
     get_current_day_for_teds, get_holiday_context, format_dates_for_caption_context,
     get_final_price_string, find_store_key_by_name, try_parse_date_from_image_text
 )
-from gemini_services import analyze_image_with_gemini, generate_caption_with_gemini, extract_field, IMAGE_ANALYSIS_PROMPT_TEMPLATE
+from gemini_services import analyze_image_with_gemini, generate_caption_with_gemini, generate_engagement_question_with_gemini, extract_field, IMAGE_ANALYSIS_PROMPT_TEMPLATE
 
 CUSTOM_STORES_FILE = "custom_stores.json"
 
@@ -317,6 +317,7 @@ def remove_file_at_index(index_to_remove):
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
             st.session_state.last_caption_by_store = {}
+            st.session_state.engagement_questions = {}
             st.session_state.info_message_after_action = "All files and associated data have been cleared."
             st.session_state.uploader_key_suffix = st.session_state.get('uploader_key_suffix', 0) + 1
         elif 'analyzed_image_data_set' in st.session_state and st.session_state.analyzed_image_data_set:
@@ -325,6 +326,7 @@ def remove_file_at_index(index_to_remove):
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
             st.session_state.last_caption_by_store = {} # Also clear continuity
+            st.session_state.engagement_questions = {} # Clear engagement questions
             st.session_state.info_message_after_action = f"File '{removed_file_name}' removed. Previous analysis and continuity references cleared. Please re-analyze remaining files."
         else:
             st.session_state.info_message_after_action = f"File '{removed_file_name}' removed."
@@ -335,6 +337,7 @@ def handle_remove_all_images():
     st.session_state.uploaded_files_info = []
     st.session_state.analyzed_image_data_set = []
     st.session_state.last_caption_by_store = {}
+    st.session_state.engagement_questions = {}
     if 'analyzed_image_data_set_source_length' in st.session_state:
         del st.session_state.analyzed_image_data_set_source_length
     st.session_state.is_analyzing_images = False
@@ -379,6 +382,7 @@ def initialize_session_state():
         'info_message_after_action': "",
         'last_caption_by_store': {},
         'uploader_key_suffix': 0,
+        'engagement_questions': {},  # Store engagement questions by item ID
         # 'custom_base_captions' is already initialized above
     }
     for key, value in defaults.items():
@@ -880,6 +884,53 @@ def main():
                             if new_e_dt.strftime("%Y-%m-%d") != data_item['dateRange']['end']:
                                 data_item['dateRange']['end'] = new_e_dt.strftime("%Y-%m-%d"); st.rerun()
 
+                # Engagement Enhancer Section
+                st.markdown("**Engagement Enhancer**")
+                engagement_col1, engagement_col2 = st.columns([2, 1])
+                
+                with engagement_col1:
+                    engagement_question = st.session_state.engagement_questions.get(data_item['id'], "")
+                    if engagement_question:
+                        st.text_area("Generated Engagement Question:", value=engagement_question, height=60, key=f"{item_key_prefix}_engagement_display", help="This question will be added to your caption to increase viewer interaction.")
+                    else:
+                        st.text_area("Generated Engagement Question:", value="Click 'Generate Engagement Question' to create an engaging question for viewers.", height=60, key=f"{item_key_prefix}_engagement_display", help="This question will be added to your caption to increase viewer interaction.")
+                
+                with engagement_col2:
+                    engagement_loading_key = f"{item_key_prefix}_engagement_loading_ind"
+                    if engagement_loading_key not in st.session_state: st.session_state[engagement_loading_key] = False
+                    
+                    if st.button("Generate Engagement Question", key=f"{item_key_prefix}_engagement_btn_ind",
+                                disabled=st.session_state[engagement_loading_key] or st.session_state.is_batch_generating_captions,
+                                type="secondary", use_container_width=True):
+                        st.session_state[engagement_loading_key] = True
+                        try:
+                            # Get store info for language
+                            store_key = data_item.get('selectedStoreKey')
+                            store_info = current_combined_captions.get(store_key, {})
+                            language = "english"  # default
+                            if store_info:
+                                first_sale_type = list(store_info.keys())[0]
+                                language = store_info[first_sale_type].get('language', 'english')
+                            
+                            question = generate_engagement_question_with_gemini(
+                                TEXT_MODEL, 
+                                data_item.get('itemProduct', 'Unknown Product'),
+                                data_item.get('itemCategory', 'General Grocery'),
+                                store_key.replace('_', ' ') if store_key else 'Store',
+                                language
+                            )
+                            st.session_state.engagement_questions[data_item['id']] = question
+                        except Exception as e:
+                            st.error(f"Failed to generate engagement question: {str(e)}")
+                        finally:
+                            st.session_state[engagement_loading_key] = False
+                        st.rerun()
+                    
+                    if st.session_state[engagement_loading_key]:
+                        st.caption("Generating engagement question...")
+
+                st.markdown("---")
+
                 caption_loading_key = f"{item_key_prefix}_caption_loading_ind"
                 if caption_loading_key not in st.session_state: st.session_state[caption_loading_key] = False
                 if st.button(f"Generate Caption for this Item", key=f"{item_key_prefix}_gen_btn_ind",
@@ -1004,6 +1055,12 @@ def exec_single_item_generation(index):
             try:
                 generated_text = generate_caption_with_gemini(TEXT_MODEL, final_prompt_for_caption)
                 cleaned_text = generated_text.replace('*', '')
+                
+                # Add engagement question if available
+                engagement_question = st.session_state.engagement_questions.get(data_item['id'], "")
+                if engagement_question:
+                    cleaned_text += f"\n\n{engagement_question}"
+                
                 data_item['generatedCaption'] = cleaned_text
                 st.session_state.last_caption_by_store[store_details_key] = cleaned_text
             except Exception as e:
