@@ -388,10 +388,12 @@ def create_social_media_mockup(image_bytes, caption, post_index, total_posts):
         </div>
         
         <!-- Image -->
-        <div style="position: relative;">
+        <div style="position: relative; height: 500px; overflow: hidden;">
             <img src="data:image/jpeg;base64,{image_bytes}" style="
                 width: 100%;
-                height: auto;
+                height: 100%;
+                object-fit: cover;
+                object-position: center bottom;
                 display: block;
             " alt="Post image">
             <!-- Post counter for carousel -->
@@ -408,7 +410,7 @@ def create_social_media_mockup(image_bytes, caption, post_index, total_posts):
         
         <!-- Caption -->
         <div style="padding: 0 16px 16px; background: #1a1a1a;">
-            <div style="color: white; font-size: 14px; line-height: 1.4; white-space: pre-line;">{html_escaper.escape(caption)}</div>
+            <div style="color: white; font-size: 14px; line-height: 1.4; white-space: pre-line;">{html_escaper.escape(caption) if caption else "No caption generated yet"}</div>
         </div>
     </div>
     """
@@ -428,6 +430,9 @@ def render_mockup_carousel():
     if not items_with_captions:
         st.info("No captions generated yet. Generate some captions to see the mockup!")
         return
+    
+    # Debug info
+    st.caption(f"Found {len(items_with_captions)} items with captions for mockup display")
     
     st.markdown("---")
     st.header("📱 Social Media Mockup Preview")
@@ -450,9 +455,10 @@ def render_mockup_carousel():
         if item.get('image_bytes_for_preview'):
             # Convert image bytes to base64
             image_base64 = base64.b64encode(item['image_bytes_for_preview']).decode()
+            caption_text = item.get('generatedCaption', '').strip()
             mockup_html += create_social_media_mockup(
                 image_base64, 
-                item['generatedCaption'], 
+                caption_text, 
                 i, 
                 len(items_with_captions)
             )
