@@ -346,6 +346,153 @@ def handle_remove_all_images():
     st.session_state.info_message_after_action = "All uploaded files and their associated data have been cleared."
     st.session_state.uploader_key_suffix = st.session_state.get('uploader_key_suffix', 0) + 1 # Reset uploader
 
+# --- Mockup Viewer Functions ---
+def create_social_media_mockup(image_bytes, caption, post_index, total_posts):
+    """Creates a realistic social media post mockup"""
+    mockup_html = f"""
+    <div class="social-mockup-post" style="
+        max-width: 400px;
+        margin: 20px auto;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        border: 1px solid #333;
+    ">
+        <!-- Header -->
+        <div style="
+            padding: 12px 16px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            background: #1a1a1a;
+        ">
+            <div style="
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+                margin-right: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: 14px;
+            ">S</div>
+            <div>
+                <div style="color: white; font-weight: 600; font-size: 14px;">Store Account</div>
+                <div style="color: #999; font-size: 12px;">Sponsored</div>
+            </div>
+            <div style="margin-left: auto; color: #999; font-size: 18px;">⋯</div>
+        </div>
+        
+        <!-- Image -->
+        <div style="position: relative;">
+            <img src="data:image/jpeg;base64,{image_bytes}" style="
+                width: 100%;
+                height: auto;
+                display: block;
+            " alt="Post image">
+            <!-- Post counter for carousel -->
+            {f'<div style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px;">{post_index + 1}/{total_posts}</div>' if total_posts > 1 else ''}
+        </div>
+        
+        <!-- Action buttons -->
+        <div style="padding: 8px 16px; display: flex; gap: 16px; background: #1a1a1a;">
+            <div style="color: white; font-size: 24px;">♡</div>
+            <div style="color: white; font-size: 24px;">💬</div>
+            <div style="color: white; font-size: 24px;">📤</div>
+            <div style="margin-left: auto; color: white; font-size: 24px;">🔖</div>
+        </div>
+        
+        <!-- Caption -->
+        <div style="padding: 0 16px 16px; background: #1a1a1a;">
+            <div style="color: white; font-size: 14px; line-height: 1.4; white-space: pre-line;">{html_escaper.escape(caption)}</div>
+        </div>
+    </div>
+    """
+    return mockup_html
+
+def render_mockup_carousel():
+    """Renders the mockup carousel for all posts with captions"""
+    if not st.session_state.analyzed_image_data_set:
+        return
+    
+    # Filter items that have captions
+    items_with_captions = [
+        item for item in st.session_state.analyzed_image_data_set 
+        if item.get('generatedCaption', '').strip()
+    ]
+    
+    if not items_with_captions:
+        st.info("No captions generated yet. Generate some captions to see the mockup!")
+        return
+    
+    st.markdown("---")
+    st.header("📱 Social Media Mockup Preview")
+    st.caption("See how your posts will look on social media")
+    
+    # Convert images to base64 for display
+    import base64
+    
+    mockup_html = """
+    <div class="mockup-carousel" style="
+        display: flex;
+        gap: 20px;
+        overflow-x: auto;
+        padding: 20px 0;
+        scroll-behavior: smooth;
+    ">
+    """
+    
+    for i, item in enumerate(items_with_captions):
+        if item.get('image_bytes_for_preview'):
+            # Convert image bytes to base64
+            image_base64 = base64.b64encode(item['image_bytes_for_preview']).decode()
+            mockup_html += create_social_media_mockup(
+                image_base64, 
+                item['generatedCaption'], 
+                i, 
+                len(items_with_captions)
+            )
+    
+    mockup_html += "</div>"
+    
+    # Add carousel navigation if multiple posts
+    if len(items_with_captions) > 1:
+        mockup_html += """
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="scrollCarousel(-1)" style="
+                background: #6c5ce7;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 20px;
+                margin: 0 10px;
+                cursor: pointer;
+            ">← Previous</button>
+            <button onclick="scrollCarousel(1)" style="
+                background: #6c5ce7;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 20px;
+                margin: 0 10px;
+                cursor: pointer;
+            ">Next →</button>
+        </div>
+        
+        <script>
+        function scrollCarousel(direction) {
+            const carousel = document.querySelector('.mockup-carousel');
+            carousel.scrollBy({ left: direction * 420, behavior: 'smooth' });
+        }
+        </script>
+        """
+    
+    st_html_component(mockup_html, height=600)
+
 
 # --- Streamlit App State Initialization ---
 def initialize_session_state():
@@ -929,6 +1076,19 @@ def main():
                     if st.session_state[engagement_loading_key]:
                         st.caption("Generating engagement question...")
 
+                # Include Question Checkbox
+                include_question_key = f"{item_key_prefix}_include_question"
+                if include_question_key not in st.session_state:
+                    st.session_state[include_question_key] = True  # Default to checked
+                
+                include_question = st.checkbox(
+                    "Include engagement question in caption", 
+                    value=st.session_state[include_question_key],
+                    key=include_question_key,
+                    help="Check this to automatically include the generated engagement question in your caption"
+                )
+                st.session_state[include_question_key] = include_question
+
                 st.markdown("---")
 
                 caption_loading_key = f"{item_key_prefix}_caption_loading_ind"
@@ -954,6 +1114,9 @@ def main():
                     copy_button_html_content = f"""<textarea id="{text_area_id}" style="opacity:0.01; height:1px; width:1px; position:absolute; z-index: -1; pointer-events:none;" readonly>{escaped_caption_for_html}</textarea><button onclick="copyToClipboard('{text_area_id}', '{feedback_span_id}')" style="padding: 0.25rem 0.75rem; margin-top: 5px; border-radius: 8px; border: 1px solid #4A4D56; background-color: #262730; color: #FAFAFA; cursor:pointer;">Copy Caption</button><span id="{feedback_span_id}" style="margin-left: 10px; font-size: 0.9em;"></span><script>if(typeof window.copyToClipboard !== 'function'){{window.copyToClipboard=function(elementId,feedbackId){{var copyText=document.getElementById(elementId);var feedbackSpan=document.getElementById(feedbackId);if(!copyText||!feedbackSpan){{if(feedbackSpan)feedbackSpan.innerText="Error: Elements missing.";return;}}copyText.style.display='block';copyText.select();copyText.setSelectionRange(0,99999);copyText.style.display='none';var msg="";try{{var successful=document.execCommand('copy');msg=successful?'Copied!':'Copy failed.';}}catch(err){{msg='Oops, unable to copy.';}}feedbackSpan.innerText=msg;setTimeout(function(){{feedbackSpan.innerText='';}},2500);}}}}</script>"""
                     st_html_component(copy_button_html_content, height=45)
             st.markdown("---")
+
+        # Render mockup carousel
+        render_mockup_carousel()
 
     else:
         if not st.session_state.is_analyzing_images and not st.session_state.uploaded_files_info:
@@ -1056,9 +1219,11 @@ def exec_single_item_generation(index):
                 generated_text = generate_caption_with_gemini(TEXT_MODEL, final_prompt_for_caption)
                 cleaned_text = generated_text.replace('*', '')
                 
-                # Add engagement question if available
+                # Add engagement question if available and checkbox is checked
+                include_question_key = f"item_{data_item['id']}_include_question"
+                include_question = st.session_state.get(include_question_key, True)
                 engagement_question = st.session_state.engagement_questions.get(data_item['id'], "")
-                if engagement_question:
+                if engagement_question and include_question:
                     cleaned_text += f"\n\n{engagement_question}"
                 
                 data_item['generatedCaption'] = cleaned_text
