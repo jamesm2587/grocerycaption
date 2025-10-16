@@ -1098,11 +1098,19 @@ def main():
 
                 caption_loading_key = f"{item_key_prefix}_caption_loading_ind"
                 if caption_loading_key not in st.session_state: st.session_state[caption_loading_key] = False
-                if st.button(f"Generate Caption for this Item", key=f"{item_key_prefix}_gen_btn_ind",
+                
+                # Add a unique key that changes when tone changes to force regeneration
+                caption_button_key = f"{item_key_prefix}_gen_btn_ind_{st.session_state.global_selected_tone}"
+                
+                if st.button(f"Generate Caption for this Item", key=caption_button_key,
                               disabled=st.session_state[caption_loading_key] or st.session_state.is_batch_generating_captions,
                               type="secondary", use_container_width=True):
 
                     st.session_state[caption_loading_key] = True
+                    # Clear the existing caption to force regeneration
+                    data_item['generatedCaption'] = ""
+                    # Clear any previous errors
+                    data_item['analysisError'] = ""
                     # Re-use the batch generation logic for a single item
                     exec_single_item_generation(index) # Use a helper to avoid code duplication
                     st.session_state[caption_loading_key] = False
@@ -1131,6 +1139,7 @@ def exec_single_item_generation(index):
     """Helper function to run caption generation logic for a single item to reduce code duplication."""
     current_combined_captions = get_combined_captions()
     data_item = st.session_state.analyzed_image_data_set[index]
+    # Clear the existing caption to ensure fresh generation
     data_item['generatedCaption'] = ""
     store_details_key = data_item['selectedStoreKey']
     store_info_set = current_combined_captions.get(store_details_key)
