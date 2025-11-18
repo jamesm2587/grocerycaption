@@ -756,15 +756,28 @@ def initialize_session_state():
 
 # --- Function to get combined captions (initial + custom) ---
 def get_combined_captions():
+    """Combine built-in stores with custom stores from memory"""
     combined = copy.deepcopy(INITIAL_BASE_CAPTIONS)
-    custom_captions = st.session_state.get('custom_base_captions', {}) # Ensure this is accessed after init
+    custom_captions = st.session_state.get('custom_base_captions', {})
+    
     if isinstance(custom_captions, dict):
         for store_key, store_sale_types in custom_captions.items():
             if store_key not in combined:
                 combined[store_key] = {}
-            if isinstance(store_sale_types, dict): # Ensure sale types is a dict
-                 combined[store_key].update(store_sale_types)
+            if isinstance(store_sale_types, dict):
+                combined[store_key].update(store_sale_types)
+    
     return combined
+
+def save_custom_stores_to_file():
+    """Save custom stores to persistent storage"""
+    try:
+        with open(CUSTOM_STORES_FILE, 'w') as f:
+            json.dump(st.session_state.custom_base_captions, f, indent=4)
+        return True
+    except IOError as e:
+        st.error(f"Error saving custom stores: {e}")
+        return False
 
 # --- Main App UI ---
 def main():
@@ -829,11 +842,54 @@ def main():
                 st.session_state.global_selected_tone = TONE_OPTIONS[0]['value'] if TONE_OPTIONS else None
 
 
+        # Manage Custom Stores Section
+        st.markdown("---")
+        st.markdown("**🏪 Custom Store Management**")
+        
+        # Show count of custom stores
+        custom_store_count = len(st.session_state.get('custom_base_captions', {}))
+        if custom_store_count > 0:
+            st.caption(f"💾 {custom_store_count} custom store(s) in memory")
+        
+        # View existing custom stores
+        if st.session_state.get('custom_base_captions'):
+            with st.expander("👁️ View & Manage Custom Stores", expanded=False):
+                for store_key, sale_types in st.session_state.custom_base_captions.items():
+                    st.markdown(f"### {store_key.replace('_', ' ').title()}")
+                    
+                    for sale_type_key, details in sale_types.items():
+                        st.markdown(f"**{details.get('name', 'Unknown')}**")
+                        st.caption(f"Language: {details.get('language', 'N/A')} | Location: {details.get('location', 'N/A')}")
+                        
+                        # Delete button for this sale type
+                        delete_key = f"delete_{store_key}_{sale_type_key}"
+                        if st.button(f"🗑️ Delete {sale_type_key}", key=delete_key, type="secondary", use_container_width=True):
+                            # Remove this sale type
+                            del st.session_state.custom_base_captions[store_key][sale_type_key]
+                            
+                            # If no more sale types for this store, remove the store
+                            if not st.session_state.custom_base_captions[store_key]:
+                                del st.session_state.custom_base_captions[store_key]
+                            
+                            # Save to file
+                            try:
+                                with open(CUSTOM_STORES_FILE, 'w') as f:
+                                    json.dump(st.session_state.custom_base_captions, f, indent=4)
+                                st.success(f"Deleted {sale_type_key} from {store_key}")
+                            except IOError as e:
+                                st.error(f"Error saving changes: {e}")
+                            
+                            st.rerun()
+                        
+                        st.markdown("---")
+        else:
+            st.info("No custom stores yet. Add one below!")
+        
         # Add New Store Definition Form
-        with st.expander("➕ Add New Store Definition"): # Permanent implies saving to file
+        with st.expander("➕ Add New Store Definition", expanded=False):
             with st.form("new_store_form", clear_on_submit=True):
                 st.markdown("**Define a new store and one sale type.**")
-                st.caption("Data is saved to custom_stores.json")
+                st.caption("Saved permanently to custom_stores.json")
 
                 store_name_form = st.text_input("Store Name*", help="e.g., 'My Corner Shop'")
                 sale_type_key_form = st.text_input("Sale Type Key*", help="Uppercase identifier, e.g., 'WEEKLY', 'SPECIAL'. No spaces/special chars except underscore.")
@@ -879,13 +935,10 @@ def main():
 
                             st.session_state.custom_base_captions[store_key][sale_type_key] = new_sale_type_details
 
-                            try:
-                                with open(CUSTOM_STORES_FILE, 'w') as f:
-                                    json.dump(st.session_state.custom_base_captions, f, indent=4)
-                                st.success(f"Store '{store_name_form}' saved!")
-                            except IOError as e:
-                                st.error(f"Error saving to {CUSTOM_STORES_FILE}: {e}.")
-
+                            if save_custom_stores_to_file():
+                                st.success(f"✅ Store '{store_name_form}' saved to memory!")
+                                st.info("Your custom store is now available in all store dropdowns and will be remembered across sessions.")
+                            
                             st.rerun()
 
         st.markdown("---")
