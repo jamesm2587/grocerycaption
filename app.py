@@ -20,9 +20,11 @@ from utils import (
     get_current_day_for_teds, get_holiday_context, format_dates_for_caption_context,
     get_final_price_string, find_store_key_by_name, try_parse_date_from_image_text
 )
-from gemini_services import analyze_image_with_gemini, generate_caption_with_gemini, generate_engagement_question_with_gemini, extract_field, IMAGE_ANALYSIS_PROMPT_TEMPLATE
+from gemini_services import analyze_image_with_gemini, generate_caption_with_gemini, extract_field, IMAGE_ANALYSIS_PROMPT_TEMPLATE
 
 CUSTOM_STORES_FILE = "custom_stores.json"
+CAPTION_BRAIN_FILE = "caption_brain.json"
+MAX_BRAIN_ENTRIES_PER_STORE = 25
 
 AB_SECONDARY_TONE_MAP = {
     "Simple": "Bold",
@@ -37,6 +39,132 @@ AB_SECONDARY_TONE_MAP = {
     "Bold": "Friendly",
     "Nostalgic": "Excited",
 }
+
+
+def load_caption_brain():
+    try:
+        with open(CAPTION_BRAIN_FILE, 'r') as f:
+            data = json.load(f)
+            if isinstance(data, dict):
+                return data
+    except FileNotFoundError:
+        pass
+    except json.JSONDecodeError:
+        st.warning(f"{CAPTION_BRAIN_FILE} is corrupted. Starting with a fresh brain.")
+    return {}
+
+
+def save_caption_brain(brain_data):
+    try:
+        with open(CAPTION_BRAIN_FILE, 'w') as f:
+            json.dump(brain_data, f, indent=2)
+    except IOError as e:
+        st.warning(f"Failed to save caption brain: {e}")
+
+
+def get_brain_entries_for_store(store_key, product_text=None, limit=3):
+    if not store_key:
+        return []
+    brain_data = st.session_state.get('caption_brain', {})
+    entries = brain_data.get(store_key, [])
+    if not entries:
+        return []
+    normalized_product = (product_text or "").lower().strip()
+    if normalized_product:
+        matching = [entry for entry in entries if normalized_product in entry.get('product', '').lower()]
+        non_matching = [entry for entry in entries if entry not in matching]
+        ordered = matching + non_matching
+    else:
+        ordered = entries
+    return ordered[:limit]
+
+
+def add_entry_to_brain(store_key, entry):
+    if not store_key or not entry:
+        return
+    brain_data = st.session_state.setdefault('caption_brain', {})
+    store_entries = brain_data.setdefault(store_key, [])
+    store_entries.insert(0, entry)
+    if len(store_entries) > MAX_BRAIN_ENTRIES_PER_STORE:
+        del store_entries[MAX_BRAIN_ENTRIES_PER_STORE:]
+    brain_data[store_key] = store_entries
+    st.session_state.caption_brain = brain_data
+    save_caption_brain(brain_data)
+
+
+def remember_variants_in_brain(store_key, product_text, price_text, date_range, variants):
+    if not store_key or not variants:
+        return
+    timestamp = datetime.datetime.utcnow().isoformat()
+    for variant in variants:
+        entry = {
+            "variant_id": variant.get('id'),
+            "variant_label": variant.get('label'),
+            "tone": variant.get('tone'),
+            "caption": variant.get('caption'),
+            "product": product_text,
+            "price": price_text,
+            "dateRange": date_range,
+            "scheduled_time_iso": variant.get('scheduled_time_iso'),
+            "scheduled_time_display": variant.get('scheduled_time_display'),
+            "status": variant.get('status'),
+            "created_at": timestamp,
+            "engagementScore": variant.get('engagementScore'),
+            "engagementLogged": variant.get('engagementLogged', False)
+        }
+        add_entry_to_brain(store_key, entry)
+
+
+def update_brain_entry_engagement(store_key, variant_id, score):
+    brain_data = st.session_state.get('caption_brain')
+    if not brain_data or not store_key or not variant_id:
+        return
+    store_entries = brain_data.get(store_key, [])
+    updated = False
+    for entry in store_entries:
+        if entry.get('variant_id') == variant_id:
+            entry['engagementScore'] = score
+            entry['engagementLogged'] = True
+            updated = True
+            break
+    if updated:
+        save_caption_brain(brain_data)
+
+
+def render_brain_memory_section(data_item, item_key_prefix):
+    store_key = data_item.get('selectedStoreKey')
+    brain_entries = get_brain_entries_for_store(store_key, data_item.get('itemProduct'), limit=3)
+    if not brain_entries:
+        return
+    with st.expander("🧠 Brain Memory: recent winning captions", expanded=False):
+        for idx, entry in enumerate(brain_entries):
+            entry_caption = entry.get('caption', 'No caption stored.')
+            entry_caption_display = entry_caption if len(entry_caption) <= 400 else f"{entry_caption[:397]}..."
+            st.markdown(f"**{entry.get('product', 'Unknown Product')}** • {entry.get('tone', 'Tone')} • {entry.get('variant_label', 'Variant')} • {entry.get('created_at', 'recent')}")
+            st.caption(entry_caption_display)
+            text_area_id = f"brain_copy_{item_key_prefix}_{idx}"
+            feedback_id = f"brain_copy_feedback_{item_key_prefix}_{idx}"
+            escaped_text = html_escaper.escape(entry_caption)
+            copy_button_html_content = f"""<textarea id="{text_area_id}" style="opacity:0.01; height:1px; width:1px; position:absolute; z-index: -1; pointer-events:none;" readonly>{escaped_text}</textarea><button onclick="copyToClipboard('{text_area_id}', '{feedback_id}')" style="padding: 0.25rem 0.75rem; margin-top: 5px; border-radius: 8px; border: 1px solid #4A4D56; background-color: #262730; color: #FAFAFA; cursor:pointer;">Copy</button><span id="{feedback_id}" style="margin-left: 10px; font-size: 0.9em;"></span><script>if(typeof window.copyToClipboard !== 'function'){{window.copyToClipboard=function(elementId,feedbackId){{var copyText=document.getElementById(elementId);var feedbackSpan=document.getElementById(feedbackId);if(!copyText||!feedbackSpan){{if(feedbackSpan)feedbackSpan.innerText="Error: Elements missing.";return;}}copyText.style.display='block';copyText.select();copyText.setSelectionRange(0,99999);copyText.style.display='none';var msg="";try{{var successful=document.execCommand('copy');msg=successful?'Copied!':'Copy failed.';}}catch(err){{msg='Oops, unable to copy.';}}feedbackSpan.innerText=msg;setTimeout(function(){{feedbackSpan.innerText='';}},2500);}}}}</script>"""
+            st_html_component(copy_button_html_content, height=45)
+            if st.button("Use this memory as current primary", key=f"{item_key_prefix}_apply_brain_{idx}", use_container_width=True):
+                variant_id = f"{data_item['id']}_brain_memory_{idx}"
+                data_item['captionVariants'] = [{
+                    "id": variant_id,
+                    "label": entry.get('variant_label', 'Brain Memory'),
+                    "tone": entry.get('tone', 'Tone'),
+                    "caption": entry_caption,
+                    "scheduled_time_iso": entry.get('scheduled_time_iso'),
+                    "scheduled_time_display": entry.get('scheduled_time_display', entry.get('created_at', 'recent')),
+                    "status": "brain-memory",
+                    "engagementScore": entry.get('engagementScore'),
+                    "engagementLogged": entry.get('engagementLogged', False)
+                }]
+                data_item['selectedPrimaryVariantId'] = variant_id
+                data_item['generatedCaption'] = entry_caption
+                st.session_state.last_caption_by_store[store_key] = entry_caption
+                st.session_state.info_message_after_action = "Brain memory applied to this item."
+                st.rerun()
 
 
 def get_store_primary_tone(store_key):
@@ -383,7 +511,6 @@ def remove_file_at_index(index_to_remove):
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
             st.session_state.last_caption_by_store = {}
-            st.session_state.engagement_questions = {}
             st.session_state.info_message_after_action = "All files and associated data have been cleared."
             st.session_state.uploader_key_suffix = st.session_state.get('uploader_key_suffix', 0) + 1
         elif 'analyzed_image_data_set' in st.session_state and st.session_state.analyzed_image_data_set:
@@ -392,7 +519,6 @@ def remove_file_at_index(index_to_remove):
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
             st.session_state.last_caption_by_store = {} # Also clear continuity
-            st.session_state.engagement_questions = {} # Clear engagement questions
             st.session_state.info_message_after_action = f"File '{removed_file_name}' removed. Previous analysis and continuity references cleared. Please re-analyze remaining files."
         else:
             st.session_state.info_message_after_action = f"File '{removed_file_name}' removed."
@@ -403,7 +529,6 @@ def handle_remove_all_images():
     st.session_state.uploaded_files_info = []
     st.session_state.analyzed_image_data_set = []
     st.session_state.last_caption_by_store = {}
-    st.session_state.engagement_questions = {}
     if 'analyzed_image_data_set_source_length' in st.session_state:
         del st.session_state.analyzed_image_data_set_source_length
     st.session_state.is_analyzing_images = False
@@ -585,6 +710,9 @@ def initialize_session_state():
             loaded_custom_captions = {}
         st.session_state.custom_base_captions = loaded_custom_captions
 
+    if 'caption_brain' not in st.session_state:
+        st.session_state.caption_brain = load_caption_brain()
+
     default_store_key = None
     combined_captions_for_default = get_combined_captions() # Call after custom_base_captions is set
     if combined_captions_for_default:
@@ -601,7 +729,6 @@ def initialize_session_state():
         'info_message_after_action': "",
         'last_caption_by_store': {},
         'uploader_key_suffix': 0,
-        'engagement_questions': {},  # Store engagement questions by item ID
         'ab_testing_metrics': {},
         # 'custom_base_captions' is already initialized above
     }
@@ -1082,6 +1209,8 @@ def main():
                         else:
                             st.caption(f"A/B Autopilot currently favors {winner_tone} tone.")
 
+                    render_brain_memory_section(data_item, item_key_prefix)
+
                     # Get the caption structure to conditionally show price/date fields
                     temp_store_key = data_item.get('selectedStoreKey')
                     temp_store_info = current_combined_captions.get(temp_store_key, {})
@@ -1123,63 +1252,6 @@ def main():
                             new_e_dt = st.date_input("End Date", value=e_dt_val, key=f"{item_key_prefix}_edate_ind", min_value=current_start_date_for_end_picker)
                             if new_e_dt.strftime("%Y-%m-%d") != data_item['dateRange']['end']:
                                 data_item['dateRange']['end'] = new_e_dt.strftime("%Y-%m-%d"); st.rerun()
-
-                # Engagement Enhancer Section
-                st.markdown("**Engagement Enhancer**")
-                engagement_col1, engagement_col2 = st.columns([2, 1])
-                
-                with engagement_col1:
-                    engagement_question = st.session_state.engagement_questions.get(data_item['id'], "")
-                    if engagement_question:
-                        st.text_area("Generated Engagement Question:", value=engagement_question, height=60, key=f"{item_key_prefix}_engagement_display", help="This question will be added to your caption to increase viewer interaction.")
-                    else:
-                        st.text_area("Generated Engagement Question:", value="Click 'Generate Engagement Question' to create an engaging question for viewers.", height=60, key=f"{item_key_prefix}_engagement_display", help="This question will be added to your caption to increase viewer interaction.")
-                
-                with engagement_col2:
-                    engagement_loading_key = f"{item_key_prefix}_engagement_loading_ind"
-                    if engagement_loading_key not in st.session_state: st.session_state[engagement_loading_key] = False
-                    
-                    if st.button("Generate Engagement Question", key=f"{item_key_prefix}_engagement_btn_ind",
-                                disabled=st.session_state[engagement_loading_key] or st.session_state.is_batch_generating_captions,
-                                type="secondary", use_container_width=True):
-                        st.session_state[engagement_loading_key] = True
-                        try:
-                            # Get store info for language
-                            store_key = data_item.get('selectedStoreKey')
-                            store_info = current_combined_captions.get(store_key, {})
-                            language = "english"  # default
-                            if store_info:
-                                first_sale_type = list(store_info.keys())[0]
-                                language = store_info[first_sale_type].get('language', 'english')
-                            
-                            question = generate_engagement_question_with_gemini(
-                                TEXT_MODEL, 
-                                data_item.get('itemProduct', 'Unknown Product'),
-                                data_item.get('itemCategory', 'General Grocery'),
-                                store_key.replace('_', ' ') if store_key else 'Store',
-                                language
-                            )
-                            st.session_state.engagement_questions[data_item['id']] = question
-                        except Exception as e:
-                            st.error(f"Failed to generate engagement question: {str(e)}")
-                        finally:
-                            st.session_state[engagement_loading_key] = False
-                        st.rerun()
-                    
-                    if st.session_state[engagement_loading_key]:
-                        st.caption("Generating engagement question...")
-
-                # Include Question Checkbox
-                include_question_key = f"{item_key_prefix}_include_question"
-                if include_question_key not in st.session_state:
-                    st.session_state[include_question_key] = True  # Default to checked
-                
-                include_question = st.checkbox(
-                    "Include engagement question in caption", 
-                    value=st.session_state[include_question_key],
-                    key=include_question_key,
-                    help="Check this to automatically include the generated engagement question in your caption"
-                )
 
                 st.markdown("---")
 
@@ -1296,6 +1368,7 @@ def main():
                                 record_engagement_result(data_item['selectedStoreKey'], variant['tone'], new_score)
                                 variant['engagementLogged'] = True
                                 variant['status'] = "measured"
+                                update_brain_entry_engagement(data_item['selectedStoreKey'], variant['id'], new_score)
                                 st.session_state.info_message_after_action = f"Saved engagement score for {variant['label']}."
                                 st.rerun()
                 elif data_item.get('generatedCaption'):
@@ -1410,6 +1483,20 @@ def exec_single_item_generation(index):
             f"REFERENCE CAPTION START:\n{reference_caption_for_store}\nREFERENCE CAPTION END\nWhen generating new variants, ensure each one still feels distinct."
         ])
 
+    brain_context_entries = get_brain_entries_for_store(store_details_key, product_display_text, limit=2)
+    if brain_context_entries:
+        brain_snippets = []
+        for entry in brain_context_entries:
+            snippet_text = entry.get('caption', '')
+            if len(snippet_text) > 280:
+                snippet_text = f"{snippet_text[:277]}..."
+            brain_snippets.append(
+                f"- {entry.get('product', 'Product')} ({entry.get('tone', 'Tone')} tone, {entry.get('created_at', 'recent')}): {snippet_text}"
+            )
+        base_prompt_sections.append(
+            "Brain Memory references (do NOT copy, only use for rhythm & energy):\n" + "\n".join(brain_snippets)
+        )
+
     base_prompt_sections.extend([
         f"\nReference Style (from original example - adapt, don't copy verbatim):\n\"{caption_structure['original_example']}\"",
         "\nCaption Requirements:",
@@ -1458,10 +1545,6 @@ def exec_single_item_generation(index):
         {"label": "Variant B", "tone": secondary_tone, "scheduled_dt": schedule_b_dt},
     ]
 
-    include_question_key = f"item_{data_item['id']}_include_question"
-    include_question = st.session_state.get(include_question_key, True)
-    engagement_question = st.session_state.engagement_questions.get(data_item['id'], "")
-
     variant_outputs = []
     for spec in variant_specs:
         variant_prompt_sections = list(base_prompt_sections)
@@ -1479,8 +1562,6 @@ def exec_single_item_generation(index):
         try:
             generated_text = generate_caption_with_gemini(TEXT_MODEL, final_prompt_for_caption)
             cleaned_text = generated_text.replace('*', '').strip()
-            if engagement_question and include_question:
-                cleaned_text += f"\n\n{engagement_question}"
 
             variant_outputs.append({
                 "id": f"{data_item['id']}_{spec['label'].lower().replace(' ', '_')}",
@@ -1501,6 +1582,13 @@ def exec_single_item_generation(index):
         data_item['selectedPrimaryVariantId'] = variant_outputs[0]['id']
         data_item['generatedCaption'] = variant_outputs[0]['caption']
         st.session_state.last_caption_by_store[store_details_key] = variant_outputs[0]['caption']
+        remember_variants_in_brain(
+            store_details_key,
+            product_display_text,
+            final_price if is_sale_based_post else "",
+            data_item.get('dateRange', {}),
+            variant_outputs
+        )
     else:
         data_item['captionVariants'] = []
         data_item['generatedCaption'] = ""
