@@ -30,108 +30,187 @@ def load_custom_ui():
     st.markdown("""
         <style>
             /* --- GENERAL --- */
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+            
+            * {
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            }
+            
             .stApp {
-                /* Theme is set in .streamlit/config.toml */
+                background: linear-gradient(135deg, #0f0c29 0%, #1a1a2e 50%, #16213e 100%);
             }
+            
             .main .block-container {
-                padding-top: 2rem;
-                padding-bottom: 2rem;
+                padding-top: 3rem;
+                padding-bottom: 3rem;
+                max-width: 1400px;
             }
+            
             h1, h2, h3, h4, h5, h6 {
-                font-weight: 600; /* Bolder headers */
+                font-weight: 700;
+                letter-spacing: -0.5px;
             }
 
             /* --- TITLE --- */
-            h1 { /* Main title style */
+            h1 {
                 text-align: center;
-                font-size: 2.5rem; /* Adjusted for better visual hierarchy */
-                letter-spacing: -1px;
-                padding-bottom: 1rem;
-                border-bottom: 1px solid #2a2d34; /* Use a subtle border from your theme */
-                margin-bottom: 2rem; /* More space after title */
+                font-size: 3.5rem;
+                font-weight: 800;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                padding-bottom: 1.5rem;
+                margin-bottom: 3rem;
+                position: relative;
+            }
+            
+            h1::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 150px;
+                height: 4px;
+                background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+                border-radius: 2px;
             }
 
             /* --- BUTTONS --- */
             .stButton > button {
-                border-radius: 8px;
-                padding: 10px 20px;
+                border-radius: 12px;
+                padding: 14px 28px;
                 font-weight: 600;
-                transition: all 0.2s ease-in-out;
-                border-width: 1px; /* Ensure border is visible for secondary */
+                font-size: 1rem;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                border: none;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             }
-            /* Primary Button (e.g., Analyze) */
+            
+            /* Primary Button */
             div[data-testid="stButton"] > button[kind="primary"] {
-                 background-color: #6c5ce7; /* primaryColor from theme */
-                 color: white;
-                 border: none; /* Primary buttons might not need a border if background is strong */
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                font-weight: 700;
             }
+            
             div[data-testid="stButton"] > button[kind="primary"]:hover {
-                 background-color: #5848c7; /* Darker shade for hover */
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+                background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
             }
-             /* Secondary Button (e.g., Remove, Generate for item) */
+            
+            /* Secondary Button */
             div[data-testid="stButton"] > button[kind="secondary"] {
-                border-color: #4A4D56; /* A slightly lighter border than darkest background */
+                background: rgba(102, 126, 234, 0.1);
+                color: #667eea;
+                border: 2px solid rgba(102, 126, 234, 0.3);
             }
+            
             div[data-testid="stButton"] > button[kind="secondary"]:hover {
-                border-color: #6c5ce7; /* primaryColor on hover */
-                color: #6c5ce7; /* primaryColor text on hover */
+                background: rgba(102, 126, 234, 0.2);
+                border-color: #667eea;
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
             }
 
             /* --- FILE UPLOADER --- */
             div[data-testid="stFileUploader"] {
-                border: 2px dashed #4A4D56; /* Dashed border */
-                background-color: #1a1c22; /* Darker than secondaryBg for contrast */
-                border-radius: 12px;
-                padding: 1.5rem;
+                border: 3px dashed rgba(102, 126, 234, 0.4);
+                background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+                border-radius: 20px;
+                padding: 2.5rem;
+                transition: all 0.3s ease;
             }
-            div[data-testid="stFileUploader"] label { /* Uploader label */
-                font-size: 1.1rem;
-                font-weight: 600;
+            
+            div[data-testid="stFileUploader"]:hover {
+                border-color: rgba(102, 126, 234, 0.8);
+                background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+                transform: translateY(-2px);
+            }
+            
+            div[data-testid="stFileUploader"] label {
+                font-size: 1.2rem;
+                font-weight: 700;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
             }
 
             /* --- SIDEBAR --- */
             div[data-testid="stSidebar"] > div:first-child {
-                background-color: #1a1c22; /* Darker shade for sidebar */
-                border-right: 1px solid #2a2d34; /* Subtle separator */
+                background: linear-gradient(180deg, rgba(15, 12, 41, 0.95) 0%, rgba(26, 26, 46, 0.95) 100%);
+                backdrop-filter: blur(10px);
+                border-right: 2px solid rgba(102, 126, 234, 0.2);
             }
 
             /* --- Expander in Sidebar --- */
-            div[data-testid="stSidebar"] div[data-testid="stExpander"] { /* Target expander in sidebar specifically */
-                 border: 1px solid #2a2d34;
-                 border-radius: 9px;
-                 background-color: #262730; /* secondaryBackgroundColor */
-                 margin-bottom: 1rem; /* Add some space below sidebar expanders */
+            div[data-testid="stSidebar"] div[data-testid="stExpander"] {
+                border: 2px solid rgba(102, 126, 234, 0.2);
+                border-radius: 16px;
+                background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+                margin-bottom: 1.5rem;
+                transition: all 0.3s ease;
             }
-            div[data-testid="stSidebar"] div[data-testid="stExpander"] summary { /* Expander header */
-                font-weight: 600;
-                color: #FAFAFA; /* textColor */
+            
+            div[data-testid="stSidebar"] div[data-testid="stExpander"]:hover {
+                border-color: rgba(102, 126, 234, 0.5);
+                transform: translateX(4px);
+            }
+            
+            div[data-testid="stSidebar"] div[data-testid="stExpander"] summary {
+                font-weight: 700;
+                color: #FAFAFA;
+                padding: 0.5rem;
             }
 
             /* --- Expander in Main Content (File Previews) --- */
             .main div[data-testid="stExpander"] {
-                 border: 1px solid #2a2d34;
-                 border-radius: 8px;
-                 background-color: #1a1c22; /* Slightly darker for main content expanders */
-                 margin-bottom: 1.5rem;
+                border: 2px solid rgba(102, 126, 234, 0.3);
+                border-radius: 20px;
+                background: linear-gradient(135deg, rgba(15, 12, 41, 0.6) 0%, rgba(26, 26, 46, 0.6) 100%);
+                backdrop-filter: blur(10px);
+                margin-bottom: 2rem;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+                transition: all 0.3s ease;
             }
+            
+            .main div[data-testid="stExpander"]:hover {
+                border-color: rgba(102, 126, 234, 0.6);
+                transform: translateY(-4px);
+                box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
+            }
+            
             .main div[data-testid="stExpander"] summary {
-                font-weight: 600;
+                font-weight: 700;
+                font-size: 1.1rem;
                 color: #FAFAFA;
-                padding: 0.5rem 0rem; /* Add some padding to summary */
+                padding: 1rem;
             }
+            
             .main div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {
-                padding-top: 1rem; /* Space between summary and content */
+                padding-top: 1.5rem;
             }
 
 
             /* --- BORDERED CONTAINERS / CARDS for individual items --- */
-             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div {
-                background-color: #1a1c22;
-                border-radius: 12px;
-                box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-                border: 1px solid #2a2d34;
-                padding: 1.5rem; /* Added more padding inside the card */
-                margin-bottom: 1.5rem; /* Space between cards */
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div {
+                background: linear-gradient(135deg, rgba(15, 12, 41, 0.7) 0%, rgba(26, 26, 46, 0.7) 100%);
+                backdrop-filter: blur(15px);
+                border-radius: 24px;
+                box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+                border: 2px solid rgba(102, 126, 234, 0.3);
+                padding: 2.5rem;
+                margin-bottom: 2.5rem;
+                transition: all 0.3s ease;
+            }
+            
+            div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div:hover {
+                border-color: rgba(102, 126, 234, 0.6);
+                transform: translateY(-6px);
+                box-shadow: 0 16px 48px rgba(102, 126, 234, 0.25);
             }
 
             /* --- Form Elements Spacing within Cards --- */
@@ -152,56 +231,85 @@ def load_custom_ui():
 
             /* --- Text Input & Text Area --- */
             .stTextInput input, .stTextArea textarea {
-                border-radius: 8px !important;
-                border: 1px solid #4A4D56 !important;
-                background-color: #262730 !important;
+                border-radius: 12px !important;
+                border: 2px solid rgba(102, 126, 234, 0.3) !important;
+                background: rgba(15, 12, 41, 0.6) !important;
                 color: #FAFAFA !important;
-                padding: 0.5rem 0.75rem !important; /* Adjust padding for input fields */
+                padding: 0.75rem 1rem !important;
+                font-size: 1rem !important;
+                transition: all 0.3s ease !important;
             }
+            
             .stTextInput input:focus, .stTextArea textarea:focus {
-                border-color: #6c5ce7 !important;
-                box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25) !important;
+                border-color: #667eea !important;
+                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2) !important;
+                background: rgba(15, 12, 41, 0.8) !important;
+                transform: translateY(-2px) !important;
             }
 
             /* --- Selectbox --- */
             .stSelectbox > div[data-baseweb="select"] > div {
-                border-radius: 8px !important;
-                border: 1px solid #4A4D56 !important;
-                background-color: #262730 !important;
-                padding-top: 2px !important; /* Fine-tune selectbox padding */
-                padding-bottom: 2px !important;
+                border-radius: 12px !important;
+                border: 2px solid rgba(102, 126, 234, 0.3) !important;
+                background: rgba(15, 12, 41, 0.6) !important;
+                padding: 0.5rem !important;
+                transition: all 0.3s ease !important;
             }
-             .stSelectbox > div[data-baseweb="select"] > div:focus-within {
-                 border-color: #6c5ce7 !important;
-                 box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25) !important;
-             }
+            
+            .stSelectbox > div[data-baseweb="select"] > div:focus-within {
+                border-color: #667eea !important;
+                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2) !important;
+                background: rgba(15, 12, 41, 0.8) !important;
+                transform: translateY(-2px) !important;
+            }
 
             /* --- Date Input --- */
             .stDateInput input {
-                 border-radius: 8px !important;
-                 border: 1px solid #4A4D56 !important;
-                 background-color: #262730 !important;
-                 padding: 0.5rem 0.75rem !important; /* Adjust padding */
+                border-radius: 12px !important;
+                border: 2px solid rgba(102, 126, 234, 0.3) !important;
+                background: rgba(15, 12, 41, 0.6) !important;
+                padding: 0.75rem 1rem !important;
+                transition: all 0.3s ease !important;
             }
+            
             .stDateInput input:focus {
-                 border-color: #6c5ce7 !important;
-                 box-shadow: 0 0 0 0.2rem rgba(108, 92, 231, 0.25) !important;
+                border-color: #667eea !important;
+                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2) !important;
+                background: rgba(15, 12, 41, 0.8) !important;
+                transform: translateY(-2px) !important;
             }
 
             /* --- Checkbox --- */
             .stCheckbox label {
                 font-size: 1rem;
-                padding-top: 0.25rem; /* Align checkbox label better */
+                font-weight: 500;
+                padding-top: 0.25rem;
+            }
+            
+            .stCheckbox input[type="checkbox"] {
+                width: 20px;
+                height: 20px;
+                accent-color: #667eea;
             }
 
             /* Style for st.video to make it fit container width */
             .stVideo {
                 width: 100%;
-                margin-bottom: 0.5rem; /* Space below video in preview grid */
+                margin-bottom: 1rem;
             }
+            
             .stVideo video {
                 width: 100%;
-                border-radius: 8px;
+                border-radius: 16px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+                border: 2px solid rgba(102, 126, 234, 0.2);
+            }
+            
+            /* Image styling */
+            .main img {
+                border-radius: 16px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+                border: 2px solid rgba(102, 126, 234, 0.2);
             }
 
             /* Specific Spacing for Two-Column Date Inputs */
@@ -435,8 +543,8 @@ def render_mockup_carousel():
     st.caption(f"Found {len(items_with_captions)} items with captions for mockup display")
     
     st.markdown("---")
-    st.header("📱 Social Media Mockup Preview")
-    st.caption("See how your posts will look on social media")
+    st.markdown("## 📱 Social Media Mockup Preview")
+    st.markdown("<p style='color: rgba(255, 255, 255, 0.7); font-size: 1.1rem; margin-bottom: 2rem;'>See how your posts will look on Instagram</p>", unsafe_allow_html=True)
     
     # Convert images to base64 for display
     import base64
@@ -556,10 +664,15 @@ def get_combined_captions():
 
 # --- Main App UI ---
 def main():
-    st.set_page_config(layout="wide", page_title="Caption Generator")
+    st.set_page_config(
+        layout="wide", 
+        page_title="📱 Social Media Caption Generator",
+        page_icon="📱",
+        initial_sidebar_state="expanded"
+    )
     load_custom_ui()  # Load the new UI styles at the very beginning
 
-    st.title("Social Media Caption Generator")
+    st.title("📱 Social Media Caption Generator")
 
     initialize_session_state() # Initialize session state variables
     current_combined_captions = get_combined_captions() # Get current combined captions data
@@ -580,9 +693,11 @@ def main():
 
     # --- Sidebar ---
     with st.sidebar:
-        st.header("Global Settings")
+        st.markdown("### ⚙️ Global Settings")
+        st.markdown("---")
 
         # Tone Selector
+        st.markdown("**🎨 Caption Tone**")
         tone_labels_dict = {tone['value']: tone['label'] for tone in TONE_OPTIONS}
         current_global_tone = st.session_state.get('global_selected_tone', TONE_OPTIONS[0]['value'] if TONE_OPTIONS else None)
 
@@ -596,10 +711,12 @@ def main():
             try:
                 tone_index = list(tone_labels_dict.keys()).index(current_global_tone)
                 selected_tone_val = st.selectbox(
-                    "Caption Tone", options=list(tone_labels_dict.keys()),
+                    "Select your preferred tone", 
+                    options=list(tone_labels_dict.keys()),
                     format_func=lambda x: tone_labels_dict[x],
                     index=tone_index,
-                    key="global_tone_selector" # Keep key for state
+                    key="global_tone_selector",
+                    label_visibility="collapsed"
                 )
                 if selected_tone_val and selected_tone_val != st.session_state.global_selected_tone:
                      st.session_state.global_selected_tone = selected_tone_val
@@ -609,9 +726,10 @@ def main():
 
 
         # Add New Store Definition Form
-        with st.expander("Add New Store Definition (Permanent)"): # Permanent implies saving to file
+        with st.expander("➕ Add New Store Definition"): # Permanent implies saving to file
             with st.form("new_store_form", clear_on_submit=True):
-                st.caption("Define a new store and one sale type. Data is saved to custom_stores.json.")
+                st.markdown("**Define a new store and one sale type.**")
+                st.caption("Data is saved to custom_stores.json")
 
                 store_name_form = st.text_input("Store Name*", help="e.g., 'My Corner Shop'")
                 sale_type_key_form = st.text_input("Sale Type Key*", help="Uppercase identifier, e.g., 'WEEKLY', 'SPECIAL'. No spaces/special chars except underscore.")
@@ -624,7 +742,7 @@ def main():
                 location_form = st.text_input("Location*", help="Store address or general area.")
                 base_hashtags_form = st.text_input("Base Hashtags*", help="Comma-separated, e.g., #MyStore,#Deals")
 
-                submitted_new_store = st.form_submit_button("Save New Store Definition")
+                submitted_new_store = st.form_submit_button("💾 Save New Store Definition", type="primary")
 
                 if submitted_new_store:
                     if not all([store_name_form, sale_type_key_form, sale_type_display_name_form, language_form, original_example_form, location_form, base_hashtags_form]):
@@ -667,14 +785,17 @@ def main():
                             st.rerun()
 
         st.markdown("---")
-        st.caption(f"Caption Gen v4.3 // {datetime.date.today().strftime('%Y-%m-%d')}")
+        st.markdown(f"<div style='text-align: center; padding: 1rem; color: rgba(255, 255, 255, 0.5); font-size: 0.85rem;'>✨ Caption Gen v5.0<br/>{datetime.date.today().strftime('%B %d, %Y')}</div>", unsafe_allow_html=True)
 
 
     # --- File Uploader ---
+    st.markdown("### 📤 Upload Your Content")
     uploaded_file_objects = st.file_uploader(
-        "Upload Image(s) or Video(s) of Grocery Sale Ads",
+        "📸 Drag and drop images or videos of grocery sale ads",
         type=["png", "jpg", "jpeg", "webp", "mp4", "mov", "avi"],
-        accept_multiple_files=True, key=f"uploader_{st.session_state.get('uploader_key_suffix', 0)}"
+        accept_multiple_files=True, 
+        key=f"uploader_{st.session_state.get('uploader_key_suffix', 0)}",
+        help="Supported formats: PNG, JPG, JPEG, WEBP, MP4, MOV, AVI"
     )
 
     if uploaded_file_objects:
@@ -720,7 +841,7 @@ def main():
         action_cols = st.columns(2)
         analyze_button_disabled = st.session_state.is_analyzing_images or not st.session_state.uploaded_files_info
 
-        if action_cols[0].button("Analyze Uploaded File(s)", disabled=analyze_button_disabled, type="primary", use_container_width=True):
+        if action_cols[0].button("🔍 Analyze Uploaded File(s)", disabled=analyze_button_disabled, type="primary", use_container_width=True):
             st.session_state.is_analyzing_images = True
             st.session_state.analyzed_image_data_set = []
             st.session_state.error_message = ""
@@ -729,9 +850,9 @@ def main():
                 del st.session_state.analyzed_image_data_set_source_length
             st.rerun()
 
-        action_cols[1].button("Remove All & Clear Data", key="remove_all_images_button", on_click=handle_remove_all_images, use_container_width=True, type="secondary")
+        action_cols[1].button("🗑️ Remove All & Clear Data", key="remove_all_images_button", on_click=handle_remove_all_images, use_container_width=True, type="secondary")
 
-        with st.expander("Show Uploaded File Previews", expanded=True):
+        with st.expander("👁️ Show Uploaded File Previews", expanded=True):
             previews_per_row = 4
             for i in range(0, len(st.session_state.uploaded_files_info), previews_per_row):
                 cols = st.columns(previews_per_row)
@@ -747,7 +868,7 @@ def main():
                         else:
                             st.caption(f"{file_info['name']} (Preview not available)")
 
-                        st.button("Remove", key=f"remove_btn_{actual_file_index}_{file_info['name']}", on_click=remove_file_at_index, args=(actual_file_index,), use_container_width=True, type="secondary")
+                        st.button("❌ Remove", key=f"remove_btn_{actual_file_index}_{file_info['name']}", on_click=remove_file_at_index, args=(actual_file_index,), use_container_width=True, type="secondary")
                 for k_empty in range(len(row_files_batch), previews_per_row): cols[k_empty].container(height=50)
         st.markdown("---")
 
@@ -895,7 +1016,7 @@ def main():
     # --- Batch Caption Generation ---
     if st.session_state.analyzed_image_data_set and not st.session_state.is_analyzing_images:
         items_selected_for_batch = any(item.get('batch_selected', False) for item in st.session_state.analyzed_image_data_set)
-        if st.button("Generate Captions for Selected Items", type="primary", use_container_width=True,
+        if st.button("✨ Generate Captions for Selected Items", type="primary", use_container_width=True,
                       disabled=st.session_state.is_batch_generating_captions or not items_selected_for_batch):
             st.session_state.is_batch_generating_captions = True
             generated_count = 0
@@ -932,16 +1053,16 @@ def main():
     if st.session_state.analyzed_image_data_set:
         if not st.session_state.is_batch_generating_captions and st.session_state.uploaded_files_info :
             st.markdown("---")
-            st.header("File Details & Caption Generation")
+            st.markdown("## 📝 File Details & Caption Generation")
 
             # --- Select/Deselect All Buttons ---
             action_cols = st.columns(8)
-            if action_cols[0].button("Select All", use_container_width=True, key="select_all_btn"):
+            if action_cols[0].button("☑️ Select All", use_container_width=True, key="select_all_btn"):
                 for item in st.session_state.analyzed_image_data_set:
                     item['batch_selected'] = True
                 st.rerun()
 
-            if action_cols[1].button("Deselect All", use_container_width=True, key="deselect_all_btn"):
+            if action_cols[1].button("⬜ Deselect All", use_container_width=True, key="deselect_all_btn"):
                 for item in st.session_state.analyzed_image_data_set:
                     item['batch_selected'] = False
                 st.rerun()
@@ -1038,7 +1159,7 @@ def main():
                                 data_item['dateRange']['end'] = new_e_dt.strftime("%Y-%m-%d"); st.rerun()
 
                 # Engagement Enhancer Section
-                st.markdown("**Engagement Enhancer**")
+                st.markdown("### 🎯 Engagement Enhancer")
                 engagement_col1, engagement_col2 = st.columns([2, 1])
                 
                 with engagement_col1:
@@ -1052,7 +1173,7 @@ def main():
                     engagement_loading_key = f"{item_key_prefix}_engagement_loading_ind"
                     if engagement_loading_key not in st.session_state: st.session_state[engagement_loading_key] = False
                     
-                    if st.button("Generate Engagement Question", key=f"{item_key_prefix}_engagement_btn_ind",
+                    if st.button("💭 Generate Question", key=f"{item_key_prefix}_engagement_btn_ind",
                                 disabled=st.session_state[engagement_loading_key] or st.session_state.is_batch_generating_captions,
                                 type="secondary", use_container_width=True):
                         st.session_state[engagement_loading_key] = True
@@ -1106,7 +1227,7 @@ def main():
                 
                 caption_button_key = f"{item_key_prefix}_gen_btn_ind_{st.session_state[caption_counter_key]}"
                 
-                if st.button(f"Generate Caption for this Item", key=caption_button_key,
+                if st.button(f"✨ Generate Caption for this Item", key=caption_button_key,
                               disabled=st.session_state[caption_loading_key] or st.session_state.is_batch_generating_captions,
                               type="secondary", use_container_width=True):
 
@@ -1150,7 +1271,13 @@ def main():
 
     else:
         if not st.session_state.is_analyzing_images and not st.session_state.uploaded_files_info:
-            st.info("Upload some image or video files of grocery sale ads to get started, or add a new store definition via the sidebar!")
+            st.markdown("""
+                <div style='text-align: center; padding: 4rem 2rem; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 24px; border: 2px dashed rgba(102, 126, 234, 0.3);'>
+                    <h2 style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem;'>👋 Welcome!</h2>
+                    <p style='font-size: 1.2rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 1rem;'>Get started by uploading images or videos of grocery sale ads</p>
+                    <p style='color: rgba(255, 255, 255, 0.6);'>Or add a new store definition via the sidebar ⚙️</p>
+                </div>
+            """, unsafe_allow_html=True)
 
 def exec_single_item_generation(index):
     """Helper function to run caption generation logic for a single item to reduce code duplication."""
