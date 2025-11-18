@@ -30,6 +30,26 @@ def analyze_image_with_gemini(vision_model, image_bytes, prompt_template):
         raise Exception(f"Gemini image analysis failed: {str(e)}")
 
 
+def _clean_caption_response(raw_text: str) -> str:
+    """
+    Removes prefatory labels that Gemini sometimes prepends
+    (e.g., \"Generated Caption:\") and trims whitespace/formatting noise.
+    """
+    if not raw_text:
+        return ""
+    cleaned = raw_text.strip()
+    unwanted_prefix_patterns = [
+        r"^\s*\(?generated caption\)?\s*:?\s*-?\s*",
+        r"^\s*\(?draft caption\)?\s*:?\s*-?\s*",
+        r"^\s*\(?caption\)?\s*:?\s*-?\s*",
+    ]
+    for pattern in unwanted_prefix_patterns:
+        cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE)
+    # Remove residual emphasis markers some responses include by default
+    cleaned = cleaned.strip()
+    return cleaned
+
+
 def generate_caption_with_gemini(text_model, prompt):
     """
     Generates a caption using Gemini Text model.
@@ -39,7 +59,7 @@ def generate_caption_with_gemini(text_model, prompt):
         raise ValueError("Text model is not configured.")
     try:
         response = text_model.generate_content(prompt)
-        return response.text.strip()
+        return _clean_caption_response(response.text)
     except Exception as e:
         # Log error or handle more gracefully
         raise Exception(f"Gemini caption generation failed: {str(e)}")

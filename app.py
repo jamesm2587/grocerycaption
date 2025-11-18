@@ -24,6 +24,72 @@ from gemini_services import analyze_image_with_gemini, generate_caption_with_gem
 
 CUSTOM_STORES_FILE = "custom_stores.json"
 
+AB_SECONDARY_TONE_MAP = {
+    "Simple": "Bold",
+    "Fun": "Informative",
+    "Excited": "Friendly",
+    "Professional": "Humorous",
+    "Friendly": "Excited",
+    "Informative": "Fun",
+    "Humorous": "Professional",
+    "Seasonal": "Elegant",
+    "Elegant": "Bold",
+    "Bold": "Friendly",
+    "Nostalgic": "Excited",
+}
+
+
+def get_store_primary_tone(store_key):
+    fallback_tone = st.session_state.get('global_selected_tone', TONE_OPTIONS[0]['value'] if TONE_OPTIONS else "Simple")
+    store_metrics = st.session_state.get('ab_testing_metrics', {}).get(store_key or "", {})
+    winner_tone = store_metrics.get('winner')
+    return winner_tone or fallback_tone
+
+
+def get_secondary_tone(primary_tone):
+    if not TONE_OPTIONS:
+        return primary_tone
+    mapped = AB_SECONDARY_TONE_MAP.get(primary_tone)
+    if mapped:
+        return mapped
+    tone_values = [tone['value'] for tone in TONE_OPTIONS]
+    if primary_tone in tone_values:
+        return tone_values[(tone_values.index(primary_tone) + 1) % len(tone_values)]
+    return tone_values[0]
+
+
+def compute_ab_schedule_windows(date_range):
+    """Return two datetime objects for Variant A/B draft scheduling."""
+    default_start = datetime.date.today()
+    start_str = date_range.get('start') if isinstance(date_range, dict) else None
+    try:
+        start_date = datetime.datetime.strptime(start_str, "%Y-%m-%d").date()
+    except Exception:
+        start_date = default_start
+    variant_a_dt = datetime.datetime.combine(start_date, datetime.time(hour=9, minute=0))
+    variant_b_dt = variant_a_dt + datetime.timedelta(hours=8)
+    return variant_a_dt, variant_b_dt
+
+
+def format_schedule_display(dt_obj):
+    if not isinstance(dt_obj, datetime.datetime):
+        return "TBD"
+    return dt_obj.strftime("%a %b %d @ %I:%M %p")
+
+
+def record_engagement_result(store_key, tone, score):
+    """Persist engagement feedback for a store/tone combo and recalc winner."""
+    if score is None or store_key is None or tone is None:
+        return
+    metrics = st.session_state.setdefault('ab_testing_metrics', {})
+    store_metrics = metrics.setdefault(store_key, {"tone_stats": {}, "winner": None})
+    tone_stats = store_metrics["tone_stats"].setdefault(tone, {"samples": 0, "total": 0.0, "average": 0.0})
+    tone_stats["samples"] += 1
+    tone_stats["total"] += float(score)
+    tone_stats["average"] = tone_stats["total"] / max(1, tone_stats["samples"])
+    winner = max(store_metrics["tone_stats"].items(), key=lambda item: item[1]["average"] if item[1]["samples"] else 0)[0]
+    store_metrics["winner"] = winner
+
 # --- NEW UI Function ---
 def load_custom_ui():
     """Injects custom CSS for a more appealing UI."""
@@ -536,6 +602,7 @@ def initialize_session_state():
         'last_caption_by_store': {},
         'uploader_key_suffix': 0,
         'engagement_questions': {},  # Store engagement questions by item ID
+        'ab_testing_metrics': {},
         # 'custom_base_captions' is already initialized above
     }
     for key, value in defaults.items():
@@ -769,12 +836,22 @@ def main():
                     "id": f"file-{file_info['name']}-{idx}",
                     "original_filename": file_info['name'],
                     "image_bytes_for_preview": file_info['display_thumbnail_bytes'],
-                    "itemProduct": "", "itemCategory": "N/A",
-                    "detectedBrands": "N/A", "selectedStoreKey": st.session_state.global_selected_store_key,
+                    "itemProduct": "",
+                    "itemCategory": "N/A",
+                    "detectedBrands": "N/A",
+                    "selectedStoreKey": st.session_state.global_selected_store_key,
                     "selectedPriceFormat": PREDEFINED_PRICES[1]['value'] if PREDEFINED_PRICES and len(PREDEFINED_PRICES) > 1 else (PREDEFINED_PRICES[0]['value'] if PREDEFINED_PRICES else "CUSTOM"),
-                    "itemPriceValue": "", "customItemPrice": "",
-                    "dateRange": {"start": datetime.date.today().strftime("%Y-%m-%d"), "end": (datetime.date.today() + datetime.timedelta(days=6)).strftime("%Y-%m-%d")},
-                    "generatedCaption": "", "analysisError": "", "batch_selected": False
+                    "itemPriceValue": "",
+                    "customItemPrice": "",
+                    "dateRange": {
+                        "start": datetime.date.today().strftime("%Y-%m-%d"),
+                        "end": (datetime.date.today() + datetime.timedelta(days=6)).strftime("%Y-%m-%d")
+                    },
+                    "generatedCaption": "",
+                    "analysisError": "",
+                    "batch_selected": False,
+                    "captionVariants": [],
+                    "selectedPrimaryVariantId": None
                 }
 
                 try:
@@ -993,7 +1070,17 @@ def main():
                         new_selected_store_key = next((k for k, v_disp in store_options_map.items() if v_disp == selected_store_display_name), current_store_key)
                         if new_selected_store_key != data_item.get('selectedStoreKey'):
                             data_item['selectedStoreKey'] = new_selected_store_key; st.rerun()
-                    else: st.text("No stores available to select.")
+                    else:
+                        st.text("No stores available to select.")
+
+                    store_metrics_summary = st.session_state.get('ab_testing_metrics', {}).get(data_item.get('selectedStoreKey'))
+                    if store_metrics_summary and store_metrics_summary.get('winner'):
+                        winner_tone = store_metrics_summary['winner']
+                        avg_score = store_metrics_summary.get('tone_stats', {}).get(winner_tone, {}).get('average')
+                        if avg_score is not None:
+                            st.caption(f"A/B Autopilot: {winner_tone} tone is leading with avg engagement {avg_score:.1f}.")
+                        else:
+                            st.caption(f"A/B Autopilot currently favors {winner_tone} tone.")
 
                     # Get the caption structure to conditionally show price/date fields
                     temp_store_key = data_item.get('selectedStoreKey')
@@ -1134,12 +1221,89 @@ def main():
                 if st.session_state[caption_loading_key]:
                     st.caption("Generating caption for this item...")
 
-                if data_item.get('generatedCaption'):
+                caption_variants = data_item.get('captionVariants', [])
+                if caption_variants:
+                    variant_ids = [variant['id'] for variant in caption_variants]
+                    variant_label_map = {
+                        variant['id']: f"{variant['label']} • {variant['tone']} ({variant.get('status', 'scheduled').title()})"
+                        for variant in caption_variants
+                    }
+                    primary_variant_id = data_item.get('selectedPrimaryVariantId') or (variant_ids[0] if variant_ids else None)
+                    if primary_variant_id and primary_variant_id not in variant_ids:
+                        primary_variant_id = variant_ids[0]
+
+                    if primary_variant_id:
+                        primary_idx = variant_ids.index(primary_variant_id)
+                        selected_variant_id = st.selectbox(
+                            "Primary variant for mockups & copy buttons",
+                            options=variant_ids,
+                            index=primary_idx,
+                            format_func=lambda vid: variant_label_map.get(vid, vid),
+                            key=f"{item_key_prefix}_primary_variant_select"
+                        )
+                        if selected_variant_id != data_item.get('selectedPrimaryVariantId'):
+                            data_item['selectedPrimaryVariantId'] = selected_variant_id
+                            selected_variant = next((v for v in caption_variants if v['id'] == selected_variant_id), None)
+                            data_item['generatedCaption'] = selected_variant.get('caption', "") if selected_variant else ""
+                            st.session_state.last_caption_by_store[data_item['selectedStoreKey']] = data_item['generatedCaption']
+                            st.rerun()
+                        else:
+                            st.caption("Mockups + copy button use the currently selected variant above.")
+
+                    for variant in caption_variants:
+                        with st.container():
+                            st.markdown(f"**{variant['label']} ({variant['tone']})** · Scheduled: {variant.get('scheduled_time_display', 'TBD')} · Status: {variant.get('status', 'scheduled').title()}")
+                            text_area_key = f"{item_key_prefix}_{variant['id']}_text"
+                            current_caption_text = variant.get('caption', "")
+                            updated_caption_text = st.text_area(
+                                "Caption",
+                                value=current_caption_text,
+                                height=200,
+                                key=text_area_key,
+                                help="Edit this draft before scheduling or exporting."
+                            )
+                            if updated_caption_text != current_caption_text:
+                                variant['caption'] = updated_caption_text
+                                if variant['id'] == data_item.get('selectedPrimaryVariantId'):
+                                    data_item['generatedCaption'] = updated_caption_text
+                                    st.session_state.last_caption_by_store[data_item['selectedStoreKey']] = updated_caption_text
+
+                            text_area_id = f"copytext_{variant['id']}"
+                            feedback_span_id = f"copyfeedback_{variant['id']}"
+                            escaped_variant_caption = html_escaper.escape(variant.get('caption', ""))
+                            copy_button_html_content = f"""<textarea id="{text_area_id}" style="opacity:0.01; height:1px; width:1px; position:absolute; z-index: -1; pointer-events:none;" readonly>{escaped_variant_caption}</textarea><button onclick="copyToClipboard('{text_area_id}', '{feedback_span_id}')" style="padding: 0.25rem 0.75rem; margin-top: 5px; border-radius: 8px; border: 1px solid #4A4D56; background-color: #262730; color: #FAFAFA; cursor:pointer;">Copy Caption</button><span id="{feedback_span_id}" style="margin-left: 10px; font-size: 0.9em;"></span><script>if(typeof window.copyToClipboard !== 'function'){{window.copyToClipboard=function(elementId,feedbackId){{var copyText=document.getElementById(elementId);var feedbackSpan=document.getElementById(feedbackId);if(!copyText||!feedbackSpan){{if(feedbackSpan)feedbackSpan.innerText="Error: Elements missing.";return;}}copyText.style.display='block';copyText.select();copyText.setSelectionRange(0,99999);copyText.style.display='none';var msg="";try{{var successful=document.execCommand('copy');msg=successful?'Copied!':'Copy failed.';}}catch(err){{msg='Oops, unable to copy.';}}feedbackSpan.innerText=msg;setTimeout(function(){{feedbackSpan.innerText='';}},2500);}}}}</script>"""
+                            st_html_component(copy_button_html_content, height=45)
+
+                            engagement_score_key = f"{item_key_prefix}_{variant['id']}_eng_score"
+                            logged_score = variant.get('engagementScore', 0.0) or 0.0
+                            new_score = st.number_input(
+                                "Engagement score (add after the post runs)",
+                                min_value=0.0,
+                                max_value=100000.0,
+                                value=float(logged_score),
+                                step=1.0,
+                                key=engagement_score_key
+                            )
+                            variant['engagementScore'] = new_score
+
+                            log_button_disabled = variant.get('engagementLogged') or new_score <= 0
+                            if st.button(
+                                "Log engagement result",
+                                key=f"{item_key_prefix}_{variant['id']}_log_button",
+                                use_container_width=True,
+                                disabled=log_button_disabled
+                            ):
+                                record_engagement_result(data_item['selectedStoreKey'], variant['tone'], new_score)
+                                variant['engagementLogged'] = True
+                                variant['status'] = "measured"
+                                st.session_state.info_message_after_action = f"Saved engagement score for {variant['label']}."
+                                st.rerun()
+                elif data_item.get('generatedCaption'):
                     caption_text_to_display = data_item['generatedCaption']
-                    # Use dynamic key that includes the caption counter to force refresh
                     caption_display_key = f"{item_key_prefix}_capt_out_display_ind_{st.session_state.get(f'{item_key_prefix}_caption_counter', 0)}"
                     st.text_area("Generated Caption:", value=caption_text_to_display, height=200, key=caption_display_key, help="Review and copy below.")
-                    text_area_id = f"copytext_{item_key_prefix}_ind"; feedback_span_id = f"copyfeedback_{item_key_prefix}_ind"
+                    text_area_id = f"copytext_{item_key_prefix}_ind"
+                    feedback_span_id = f"copyfeedback_{item_key_prefix}_ind"
                     escaped_caption_for_html = html_escaper.escape(caption_text_to_display)
                     copy_button_html_content = f"""<textarea id="{text_area_id}" style="opacity:0.01; height:1px; width:1px; position:absolute; z-index: -1; pointer-events:none;" readonly>{escaped_caption_for_html}</textarea><button onclick="copyToClipboard('{text_area_id}', '{feedback_span_id}')" style="padding: 0.25rem 0.75rem; margin-top: 5px; border-radius: 8px; border: 1px solid #4A4D56; background-color: #262730; color: #FAFAFA; cursor:pointer;">Copy Caption</button><span id="{feedback_span_id}" style="margin-left: 10px; font-size: 0.9em;"></span><script>if(typeof window.copyToClipboard !== 'function'){{window.copyToClipboard=function(elementId,feedbackId){{var copyText=document.getElementById(elementId);var feedbackSpan=document.getElementById(feedbackId);if(!copyText||!feedbackSpan){{if(feedbackSpan)feedbackSpan.innerText="Error: Elements missing.";return;}}copyText.style.display='block';copyText.select();copyText.setSelectionRange(0,99999);copyText.style.display='none';var msg="";try{{var successful=document.execCommand('copy');msg=successful?'Copied!':'Copy failed.';}}catch(err){{msg='Oops, unable to copy.';}}feedbackSpan.innerText=msg;setTimeout(function(){{feedbackSpan.innerText='';}},2500);}}}}</script>"""
                     st_html_component(copy_button_html_content, height=45)
@@ -1156,116 +1320,190 @@ def exec_single_item_generation(index):
     """Helper function to run caption generation logic for a single item to reduce code duplication."""
     current_combined_captions = get_combined_captions()
     data_item = st.session_state.analyzed_image_data_set[index]
-    # Clear the existing caption to ensure fresh generation
     data_item['generatedCaption'] = ""
+    data_item['captionVariants'] = []
+    data_item['selectedPrimaryVariantId'] = None
+
     store_details_key = data_item['selectedStoreKey']
     store_info_set = current_combined_captions.get(store_details_key)
     current_error = data_item.get('analysisError', "")
 
     if not store_info_set:
-        current_error += f" Store details for '{store_details_key}' not found."
+        data_item['analysisError'] = (current_error + f" Store details for '{store_details_key}' not found.").strip()
+        return
+
+    sale_detail_sub_key = list(store_info_set.keys())[0]
+    if store_details_key == 'TEDS_FRESH_MARKET':
+        day_for_teds = get_current_day_for_teds()
+        if day_for_teds == 2 and 'THREE_DAY' in store_info_set:
+            sale_detail_sub_key = 'THREE_DAY'
+        elif day_for_teds == 5 and 'FOUR_DAY' in store_info_set:
+            sale_detail_sub_key = 'FOUR_DAY'
+        elif sale_detail_sub_key not in store_info_set:
+            sale_detail_sub_key = list(store_info_set.keys())[0]
+
+    caption_structure = store_info_set.get(sale_detail_sub_key)
+    if not caption_structure:
+        data_item['analysisError'] = (current_error + f" Caption structure for '{sale_detail_sub_key}' under '{store_details_key}' not found.").strip()
+        return
+
+    is_sale_based_post = caption_structure.get('dateFormat') != ""
+    product_display_text = data_item.get('itemProduct', 'Unknown Product')
+    if not product_display_text.strip() or product_display_text == "Unknown Product":
+        current_error += " Product name missing/unknown."
+
+    final_price = get_final_price_string(
+        data_item['selectedPriceFormat'],
+        data_item['itemPriceValue'],
+        data_item['customItemPrice']
+    )
+    if is_sale_based_post and (not final_price or any(marker in final_price for marker in ["[Price Value]", "[Custom Price]", "[X for $Y Price]"]) or final_price == "N/A"):
+        current_error += " Invalid/missing price."
+
+    display_dates = ""
+    if is_sale_based_post:
+        display_dates = format_dates_for_caption_context(
+            data_item['dateRange']['start'],
+            data_item['dateRange']['end'],
+            caption_structure['dateFormat'],
+            caption_structure['language']
+        )
+        if "MISSING" in display_dates or "INVALID" in display_dates:
+            if "Invalid date range for caption." not in current_error:
+                current_error += " Invalid date range for caption."
+
+    holiday_ctx = get_holiday_context(
+        data_item['dateRange']['start'],
+        data_item['dateRange']['end']
+    ) if is_sale_based_post else ""
+
+    detected_brands = data_item.get('detectedBrands', 'N/A')
+    temp_product_display_text = product_display_text
+    if detected_brands.lower() not in ['n/a', 'not found', '']:
+        temp_product_display_text += f" (featuring {detected_brands})"
+
+    base_prompt_sections = [
+        "Generate a social media caption for a grocery store promotion.",
+        f"Store & Sale Type: {caption_structure['name']}",
+        f"Product to feature: {temp_product_display_text}"
+    ]
+
+    if is_sale_based_post:
+        base_prompt_sections.append(f"Price: {final_price}")
+        if "MISSING" not in display_dates and "INVALID" not in display_dates:
+            base_prompt_sections.append(
+                f"Sale Dates (for display in caption): {display_dates}. (Actual period: {data_item['dateRange']['start']} to {data_item['dateRange']['end']})."
+            )
+
+    if holiday_ctx:
+        base_prompt_sections.append(f"Relevant Holiday Context: {holiday_ctx}.")
+
+    base_prompt_sections.extend([
+        f"Store Location: {caption_structure['location']}.",
+        f"Language for caption: {caption_structure['language']}."
+    ])
+
+    reference_caption_for_store = st.session_state.last_caption_by_store.get(store_details_key)
+    if reference_caption_for_store:
+        base_prompt_sections.extend([
+            "\nIMPORTANT STYLISTIC NOTE: For consistency with other posts for this store, maintain the overall cadence, line breaks, and structure shown in the following reference caption. Adapt product details, price, and emojis for the current item, but keep the general formatting comparable.",
+            f"REFERENCE CAPTION START:\n{reference_caption_for_store}\nREFERENCE CAPTION END\nWhen generating new variants, ensure each one still feels distinct."
+        ])
+
+    base_prompt_sections.extend([
+        f"\nReference Style (from original example - adapt, don't copy verbatim):\n\"{caption_structure['original_example']}\"",
+        "\nCaption Requirements:",
+        "- Unique, engaging, ready for social media."
+    ])
+
+    if is_sale_based_post:
+        base_prompt_sections.append(
+            f"- Feature the product on sale by stating its name (and brand like '{detected_brands}' if relevant and not 'N/A') immediately followed by or closely linked to its price. For example: '{temp_product_display_text} is now {final_price}!'. Also, clearly include the store location."
+        )
+        if "MISSING" not in display_dates and "INVALID" not in display_dates:
+            base_prompt_sections.append("- Clearly include the sale dates (as per 'display_dates').")
     else:
-        sale_detail_sub_key = list(store_info_set.keys())[0]
-        if store_details_key == 'TEDS_FRESH_MARKET':
-            day_for_teds = get_current_day_for_teds()
-            if day_for_teds == 2 and 'THREE_DAY' in store_info_set: sale_detail_sub_key = 'THREE_DAY'
-            elif day_for_teds == 5 and 'FOUR_DAY' in store_info_set: sale_detail_sub_key = 'FOUR_DAY'
-            elif sale_detail_sub_key not in store_info_set: sale_detail_sub_key = list(store_info_set.keys())[0]
+        base_prompt_sections.append(
+            f"- Feature the product by describing it in an appealing way, for example: 'Come try our delicious {temp_product_display_text} today!'. Do not mention price or sale dates."
+        )
 
-        caption_structure = store_info_set.get(sale_detail_sub_key)
-        if not caption_structure:
-            current_error += f" Caption structure for '{sale_detail_sub_key}' under '{store_details_key}' not found."
-        else:
-            is_sale_based_post = caption_structure.get('dateFormat') != ""
+    base_prompt_sections.append(
+        f"- Incorporate relevant emojis for product, tone, and holiday ({holiday_ctx if is_sale_based_post else 'general appeal'})."
+    )
 
-            product_display_text = data_item.get('itemProduct', 'Unknown Product')
-            if not product_display_text.strip() or product_display_text == "Unknown Product":
-                current_error += " Product name missing/unknown."
+    item_category_for_prompt = data_item.get('itemCategory', 'N/A')
+    base_hashtags = caption_structure['baseHashtags']
+    hashtag_details = [f"product-specific for '{product_display_text}'"]
+    if item_category_for_prompt.lower() not in ['n/a', 'not found', '', 'general grocery']:
+        hashtag_details.append(f"category '{item_category_for_prompt}'")
+    base_prompt_sections.append(
+        f"- Include these base hashtags: {base_hashtags}. Add 2-3 creative hashtags. Also, 1-2 hashtags for each: {', '.join(hashtag_details)}."
+    )
 
-            final_price = get_final_price_string(data_item['selectedPriceFormat'], data_item['itemPriceValue'], data_item['customItemPrice'])
-            if is_sale_based_post and (not final_price or "[Price Value]" in final_price or "[Custom Price]" in final_price or "[X for $Y Price]" in final_price or "N/A" in final_price):
-                current_error += " Invalid/missing price."
+    base_prompt_sections.extend([
+        f"- Store's main name ({caption_structure['name'].split('(')[0].strip()}) should be prominent if location \"{caption_structure['location']}\" is just a city/area.",
+        "- Good formatting with line breaks."
+    ])
 
+    if is_sale_based_post and caption_structure.get('durationTextPattern') and "MISSING" not in display_dates and "INVALID" not in display_dates:
+        base_prompt_sections.append(
+            f"- Naturally integrate promotional phrase \"{caption_structure['durationTextPattern']}\" with sale dates {display_dates} if it makes sense."
+        )
 
-            display_dates = ""
-            if is_sale_based_post:
-                display_dates = format_dates_for_caption_context(data_item['dateRange']['start'], data_item['dateRange']['end'], caption_structure['dateFormat'], caption_structure['language'])
-                if "MISSING" in display_dates or "INVALID" in display_dates:
-                    if "Invalid date range for caption." not in current_error:
-                        current_error += " Invalid date range for caption."
+    primary_tone = get_store_primary_tone(store_details_key)
+    secondary_tone = get_secondary_tone(primary_tone)
+    schedule_a_dt, schedule_b_dt = compute_ab_schedule_windows(data_item.get('dateRange', {}))
+    variant_specs = [
+        {"label": "Variant A", "tone": primary_tone, "scheduled_dt": schedule_a_dt},
+        {"label": "Variant B", "tone": secondary_tone, "scheduled_dt": schedule_b_dt},
+    ]
 
+    include_question_key = f"item_{data_item['id']}_include_question"
+    include_question = st.session_state.get(include_question_key, True)
+    engagement_question = st.session_state.engagement_questions.get(data_item['id'], "")
 
-            holiday_ctx = get_holiday_context(data_item['dateRange']['start'], data_item['dateRange']['end']) if is_sale_based_post else ""
-            prompt_list = [f"Generate a social media caption for a grocery store promotion.", f"Store & Sale Type: {caption_structure['name']}"]
+    variant_outputs = []
+    for spec in variant_specs:
+        variant_prompt_sections = list(base_prompt_sections)
+        schedule_display = format_schedule_display(spec['scheduled_dt'])
+        variant_prompt_sections.extend([
+            f"\nThis copy request is for {spec['label']} in an automated engagement A/B test.",
+            f"- Adopt a \"{spec['tone']}\" tone while staying authentic to the store brand.",
+            f"- Assume this draft will be scheduled as a social post for {schedule_display}.",
+            "- Provide only the caption text. Do not mention that this is Variant A/B, scheduling, or testing."
+        ])
+        if spec['label'] == "Variant B":
+            variant_prompt_sections.append("- Differentiate this variant with a fresh hook, alternative emoji mix, or CTA so we can measure impact.")
 
-            detected_brands = data_item.get('detectedBrands', 'N/A')
-            temp_product_display_text = product_display_text
-            if detected_brands.lower() not in ['n/a', 'not found', '']: temp_product_display_text += f" (featuring {detected_brands})"
+        final_prompt_for_caption = "\n".join(variant_prompt_sections)
+        try:
+            generated_text = generate_caption_with_gemini(TEXT_MODEL, final_prompt_for_caption)
+            cleaned_text = generated_text.replace('*', '').strip()
+            if engagement_question and include_question:
+                cleaned_text += f"\n\n{engagement_question}"
 
-            prompt_list.append(f"Product to feature: {temp_product_display_text}")
+            variant_outputs.append({
+                "id": f"{data_item['id']}_{spec['label'].lower().replace(' ', '_')}",
+                "label": spec['label'],
+                "tone": spec['tone'],
+                "caption": cleaned_text,
+                "scheduled_time_iso": spec['scheduled_dt'].isoformat(),
+                "scheduled_time_display": schedule_display,
+                "status": "scheduled",
+                "engagementScore": None,
+                "engagementLogged": False
+            })
+        except Exception as e:
+            current_error += f" {spec['label']} caption error: {str(e)}."
 
-            if is_sale_based_post:
-                prompt_list.append(f"Price: {final_price}")
-                if "MISSING" not in display_dates and "INVALID" not in display_dates:
-                    prompt_list.append(f"Sale Dates (for display in caption): {display_dates}. (Actual period: {data_item['dateRange']['start']} to {data_item['dateRange']['end']}).")
-
-            if holiday_ctx: prompt_list.append(f"Relevant Holiday Context: {holiday_ctx}.")
-
-            prompt_list.extend([
-                f"Store Location: {caption_structure['location']}.",
-                f"Language for caption: {caption_structure['language']}.",
-                f"Desired Tone: {st.session_state.global_selected_tone}."
-            ])
-
-            if holiday_ctx and st.session_state.global_selected_tone == "Seasonal / Festive":
-                prompt_list.append(f"Strongly emphasize the {holiday_ctx} theme and use relevant emojis.")
-
-            reference_caption_for_store = st.session_state.last_caption_by_store.get(store_details_key)
-            if reference_caption_for_store:
-                prompt_list.extend([f"\nIMPORTANT STYLISTIC NOTE: For consistency with other posts for this store, please try to follow a similar structure, tone, and overall style to the following reference caption. Adapt product details, price, and specific emojis for the current item, but keep the general formatting and sentence flow consistent with the reference.", f"REFERENCE CAPTION START:\n{reference_caption_for_store}\nREFERENCE CAPTION END\nWhen generating the new caption, please provide a creative and different alternative to the reference caption."])
-
-            prompt_list.extend([f"\nReference Style (from original example - adapt, don't copy verbatim, especially if a continuity reference above is provided):\n\"{caption_structure['original_example']}\"", "\nCaption Requirements:", "- Unique, engaging, ready for social media."])
-
-            if is_sale_based_post:
-                prompt_list.append(f"- Feature the product on sale by stating its name (and brand like '{detected_brands}' if relevant and not 'N/A') immediately followed by or closely linked to its price. For example: '{temp_product_display_text} is now {final_price}!'. Also, clearly include the store location.")
-                if "MISSING" not in display_dates and "INVALID" not in display_dates:
-                    prompt_list.append(f"- Clearly include the sale dates (as per 'display_dates').")
-            else:
-                prompt_list.append(f"- Feature the product by describing it in an appealing way, for example: 'Come try our delicious {temp_product_display_text} today!'. Do not mention price or sale dates.")
-
-            prompt_list.append(f"- Incorporate relevant emojis for product, tone, and holiday ({holiday_ctx if is_sale_based_post else 'general appeal'}).")
-
-            item_category_for_prompt = data_item.get('itemCategory', 'N/A'); base_hashtags = caption_structure['baseHashtags']; hashtag_details = [f"product-specific for '{product_display_text}'"]
-            if item_category_for_prompt.lower() not in ['n/a', 'not found', '', 'general grocery']:
-                hashtag_details.append(f"category '{item_category_for_prompt}'")
-            prompt_list.append(f"- Include these base hashtags: {base_hashtags}. Add 2-3 creative hashtags. Also, 1-2 hashtags for each: {', '.join(hashtag_details)}.")
-
-            prompt_list.extend([f"- Store's main name ({caption_structure['name'].split('(')[0].strip()}) should be prominent if location \"{caption_structure['location']}\" is just a city/area.", "- Good formatting with line breaks."])
-
-            if is_sale_based_post and caption_structure.get('durationTextPattern') and "MISSING" not in display_dates and "INVALID" not in display_dates:
-                prompt_list.append(f"- Naturally integrate promotional phrase \"{caption_structure['durationTextPattern']}\" with sale dates {display_dates} if it makes sense.")
-
-            final_prompt_for_caption = "\n".join(prompt_list)
-            try:
-                generated_text = generate_caption_with_gemini(TEXT_MODEL, final_prompt_for_caption)
-                cleaned_text = generated_text.replace('*', '')
-                
-                # Add timestamp for debugging
-                import datetime
-                timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-                cleaned_text = f"[Generated at {timestamp}] {cleaned_text}"
-                
-                # Add engagement question if available and checkbox is checked
-                include_question_key = f"item_{data_item['id']}_include_question"
-                include_question = st.session_state.get(include_question_key, True)
-                engagement_question = st.session_state.engagement_questions.get(data_item['id'], "")
-                if engagement_question and include_question:
-                    cleaned_text += f"\n\n{engagement_question}"
-                
-                data_item['generatedCaption'] = cleaned_text
-                st.session_state.last_caption_by_store[store_details_key] = cleaned_text
-            except Exception as e:
-                current_error += f" Caption API error: {str(e)}"
+    if variant_outputs:
+        data_item['captionVariants'] = variant_outputs
+        data_item['selectedPrimaryVariantId'] = variant_outputs[0]['id']
+        data_item['generatedCaption'] = variant_outputs[0]['caption']
+        st.session_state.last_caption_by_store[store_details_key] = variant_outputs[0]['caption']
+    else:
+        data_item['captionVariants'] = []
+        data_item['generatedCaption'] = ""
 
     data_item['analysisError'] = current_error.strip()
 
