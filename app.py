@@ -20,9 +20,112 @@ from utils import (
     get_current_day_for_teds, get_holiday_context, format_dates_for_caption_context,
     get_final_price_string, find_store_key_by_name, try_parse_date_from_image_text
 )
-from gemini_services import analyze_image_with_gemini, generate_caption_with_gemini, generate_engagement_question_with_gemini, extract_field, IMAGE_ANALYSIS_PROMPT_TEMPLATE
+from gemini_services import analyze_image_with_gemini, generate_caption_with_gemini, extract_field, IMAGE_ANALYSIS_PROMPT_TEMPLATE
 
 CUSTOM_STORES_FILE = "custom_stores.json"
+CAPTION_BRAIN_FILE = "caption_brain.json"
+MAX_BRAIN_ENTRIES_PER_STORE = 20  # Keep the 20 most recent captions per store
+
+# --- Caption Brain Functions ---
+def load_caption_brain():
+    """Load saved captions from the brain file"""
+    try:
+        with open(CAPTION_BRAIN_FILE, 'r') as f:
+            data = json.load(f)
+            if isinstance(data, dict):
+                return data
+    except FileNotFoundError:
+        pass
+    except json.JSONDecodeError:
+        st.warning(f"{CAPTION_BRAIN_FILE} is corrupted. Starting fresh.")
+    return {}
+
+def save_caption_brain(brain_data):
+    """Save caption brain data to file"""
+    try:
+        with open(CAPTION_BRAIN_FILE, 'w') as f:
+            json.dump(brain_data, f, indent=2)
+    except IOError as e:
+        st.warning(f"Failed to save caption brain: {e}")
+
+def save_caption_to_brain(store_key, caption_data):
+    """Save a generated caption to the brain for future reference"""
+    if not store_key or not caption_data:
+        return
+    
+    brain = st.session_state.get('caption_brain', {})
+    if store_key not in brain:
+        brain[store_key] = []
+    
+    # Add timestamp if not present
+    if 'timestamp' not in caption_data:
+        caption_data['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Add to beginning of list
+    brain[store_key].insert(0, caption_data)
+    
+    # Keep only the most recent entries
+    if len(brain[store_key]) > MAX_BRAIN_ENTRIES_PER_STORE:
+        brain[store_key] = brain[store_key][:MAX_BRAIN_ENTRIES_PER_STORE]
+    
+    st.session_state.caption_brain = brain
+    save_caption_brain(brain)
+
+def get_brain_captions_for_store(store_key, product_filter=None, limit=5):
+    """Get past captions from the brain for a specific store"""
+    if not store_key:
+        return []
+    
+    brain = st.session_state.get('caption_brain', {})
+    captions = brain.get(store_key, [])
+    
+    if not captions:
+        return []
+    
+    # Filter by product if specified
+    if product_filter:
+        normalized_filter = product_filter.lower().strip()
+        matching = [c for c in captions if normalized_filter in c.get('product', '').lower()]
+        if matching:
+            captions = matching
+    
+    return captions[:limit]
+
+def render_caption_brain_section(data_item, item_key_prefix, current_combined_captions):
+    """Render the caption brain UI section showing past captions"""
+    store_key = data_item.get('selectedStoreKey')
+    product_name = data_item.get('itemProduct', '')
+    
+    brain_captions = get_brain_captions_for_store(store_key, product_name, limit=5)
+    
+    if not brain_captions:
+        return
+    
+    with st.expander(f"🧠 Caption Brain: {len(brain_captions)} recent captions", expanded=False):
+        st.caption("Your app remembers past successful captions. Click any caption to reuse it!")
+        
+        for idx, entry in enumerate(brain_captions):
+            caption_text = entry.get('caption', 'No caption stored.')
+            # Remove timestamp prefix if present
+            caption_text = re.sub(r'\[Generated at \d{2}:\d{2}:\d{2}\] ', '', caption_text)
+            
+            # Truncate for display
+            caption_display = caption_text if len(caption_text) <= 400 else f"{caption_text[:397]}..."
+            
+            col1, col2 = st.columns([4, 1])
+            
+            with col1:
+                st.markdown(f"**{entry.get('product', 'Unknown')}** • {entry.get('tone', 'Tone')} • {entry.get('timestamp', 'Recent')}")
+                st.caption(caption_display)
+            
+            with col2:
+                if st.button("Use This", key=f"{item_key_prefix}_brain_{idx}", use_container_width=True, type="secondary"):
+                    data_item['generatedCaption'] = caption_text
+                    st.success("Caption loaded from brain!")
+                    st.rerun()
+            
+            if idx < len(brain_captions) - 1:
+                st.markdown("---")
 
 # --- NEW UI Function ---
 def load_custom_ui():
@@ -425,7 +528,6 @@ def remove_file_at_index(index_to_remove):
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
             st.session_state.last_caption_by_store = {}
-            st.session_state.engagement_questions = {}
             st.session_state.info_message_after_action = "All files and associated data have been cleared."
             st.session_state.uploader_key_suffix = st.session_state.get('uploader_key_suffix', 0) + 1
         elif 'analyzed_image_data_set' in st.session_state and st.session_state.analyzed_image_data_set:
@@ -434,7 +536,6 @@ def remove_file_at_index(index_to_remove):
             if 'analyzed_image_data_set_source_length' in st.session_state:
                 del st.session_state.analyzed_image_data_set_source_length
             st.session_state.last_caption_by_store = {} # Also clear continuity
-            st.session_state.engagement_questions = {} # Clear engagement questions
             st.session_state.info_message_after_action = f"File '{removed_file_name}' removed. Previous analysis and continuity references cleared. Please re-analyze remaining files."
         else:
             st.session_state.info_message_after_action = f"File '{removed_file_name}' removed."
@@ -445,7 +546,6 @@ def handle_remove_all_images():
     st.session_state.uploaded_files_info = []
     st.session_state.analyzed_image_data_set = []
     st.session_state.last_caption_by_store = {}
-    st.session_state.engagement_questions = {}
     if 'analyzed_image_data_set_source_length' in st.session_state:
         del st.session_state.analyzed_image_data_set_source_length
     st.session_state.is_analyzing_images = False
@@ -626,6 +726,10 @@ def initialize_session_state():
             st.error(f"Error decoding {CUSTOM_STORES_FILE}. File might be corrupted. Starting with no custom stores for this session.")
             loaded_custom_captions = {}
         st.session_state.custom_base_captions = loaded_custom_captions
+    
+    # Initialize caption brain
+    if 'caption_brain' not in st.session_state:
+        st.session_state.caption_brain = load_caption_brain()
 
     default_store_key = None
     combined_captions_for_default = get_combined_captions() # Call after custom_base_captions is set
@@ -643,7 +747,7 @@ def initialize_session_state():
         'info_message_after_action': "",
         'last_caption_by_store': {},
         'uploader_key_suffix': 0,
-        'engagement_questions': {},  # Store engagement questions by item ID
+        'caption_brain': {},  # Store past successful captions for reuse
         # 'custom_base_captions' is already initialized above
     }
     for key, value in defaults.items():
@@ -1158,62 +1262,8 @@ def main():
                             if new_e_dt.strftime("%Y-%m-%d") != data_item['dateRange']['end']:
                                 data_item['dateRange']['end'] = new_e_dt.strftime("%Y-%m-%d"); st.rerun()
 
-                # Engagement Enhancer Section
-                st.markdown("### 🎯 Engagement Enhancer")
-                engagement_col1, engagement_col2 = st.columns([2, 1])
-                
-                with engagement_col1:
-                    engagement_question = st.session_state.engagement_questions.get(data_item['id'], "")
-                    if engagement_question:
-                        st.text_area("Generated Engagement Question:", value=engagement_question, height=60, key=f"{item_key_prefix}_engagement_display", help="This question will be added to your caption to increase viewer interaction.")
-                    else:
-                        st.text_area("Generated Engagement Question:", value="Click 'Generate Engagement Question' to create an engaging question for viewers.", height=60, key=f"{item_key_prefix}_engagement_display", help="This question will be added to your caption to increase viewer interaction.")
-                
-                with engagement_col2:
-                    engagement_loading_key = f"{item_key_prefix}_engagement_loading_ind"
-                    if engagement_loading_key not in st.session_state: st.session_state[engagement_loading_key] = False
-                    
-                    if st.button("💭 Generate Question", key=f"{item_key_prefix}_engagement_btn_ind",
-                                disabled=st.session_state[engagement_loading_key] or st.session_state.is_batch_generating_captions,
-                                type="secondary", use_container_width=True):
-                        st.session_state[engagement_loading_key] = True
-                        try:
-                            # Get store info for language
-                            store_key = data_item.get('selectedStoreKey')
-                            store_info = current_combined_captions.get(store_key, {})
-                            language = "english"  # default
-                            if store_info:
-                                first_sale_type = list(store_info.keys())[0]
-                                language = store_info[first_sale_type].get('language', 'english')
-                            
-                            question = generate_engagement_question_with_gemini(
-                                TEXT_MODEL, 
-                                data_item.get('itemProduct', 'Unknown Product'),
-                                data_item.get('itemCategory', 'General Grocery'),
-                                store_key.replace('_', ' ') if store_key else 'Store',
-                                language
-                            )
-                            st.session_state.engagement_questions[data_item['id']] = question
-                        except Exception as e:
-                            st.error(f"Failed to generate engagement question: {str(e)}")
-                        finally:
-                            st.session_state[engagement_loading_key] = False
-                        st.rerun()
-                    
-                    if st.session_state[engagement_loading_key]:
-                        st.caption("Generating engagement question...")
-
-                # Include Question Checkbox
-                include_question_key = f"{item_key_prefix}_include_question"
-                if include_question_key not in st.session_state:
-                    st.session_state[include_question_key] = True  # Default to checked
-                
-                include_question = st.checkbox(
-                    "Include engagement question in caption", 
-                    value=st.session_state[include_question_key],
-                    key=include_question_key,
-                    help="Check this to automatically include the generated engagement question in your caption"
-                )
+                # Caption Brain Section - show past captions
+                render_caption_brain_section(data_item, item_key_prefix, current_combined_captions)
 
                 st.markdown("---")
 
@@ -1382,14 +1432,18 @@ def exec_single_item_generation(index):
                 timestamp = datetime.datetime.now().strftime("%H:%M:%S")
                 cleaned_text = f"[Generated at {timestamp}] {cleaned_text}"
                 
-                # Add engagement question if available and checkbox is checked
-                include_question_key = f"item_{data_item['id']}_include_question"
-                include_question = st.session_state.get(include_question_key, True)
-                engagement_question = st.session_state.engagement_questions.get(data_item['id'], "")
-                if engagement_question and include_question:
-                    cleaned_text += f"\n\n{engagement_question}"
-                
                 data_item['generatedCaption'] = cleaned_text
+                
+                # Save to caption brain for future reference
+                save_caption_to_brain(store_details_key, {
+                    'product': product_display_text,
+                    'price': final_price if is_sale_based_post else 'N/A',
+                    'dateRange': data_item['dateRange'] if is_sale_based_post else {},
+                    'tone': st.session_state.global_selected_tone,
+                    'caption': cleaned_text,
+                    'timestamp': timestamp,
+                    'category': data_item.get('itemCategory', 'N/A')
+                })
                 st.session_state.last_caption_by_store[store_details_key] = cleaned_text
             except Exception as e:
                 current_error += f" Caption API error: {str(e)}"
