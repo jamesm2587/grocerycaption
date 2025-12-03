@@ -124,44 +124,54 @@ def render_caption_brain_section(data_item, item_key_prefix, current_combined_ca
             if idx < len(brain_captions) - 1:
                 st.markdown("---")
 
-# --- NEW UI Function ---
+# --- Enhanced UI Function ---
 def load_custom_ui():
-    """Injects custom CSS for a more appealing UI."""
+    """Injects enhanced custom CSS for a polished, modern UI."""
     st.markdown("""
         <style>
-            /* --- GENERAL --- */
-            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+            /* ============================================
+               IMPROVED UI STYLES - Enhanced & Cleaned Up
+               ============================================ */
+            
+            /* --- TYPOGRAPHY & FONTS --- */
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
             
             * {
                 font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
             }
             
+            /* --- APP BACKGROUND --- */
             .stApp {
                 background: linear-gradient(135deg, #0f0c29 0%, #1a1a2e 50%, #16213e 100%);
+                background-attachment: fixed;
             }
             
+            /* --- MAIN CONTAINER --- */
             .main .block-container {
-                padding-top: 3rem;
+                padding-top: 2.5rem;
                 padding-bottom: 3rem;
                 max-width: 1400px;
             }
             
+            /* --- HEADINGS --- */
             h1, h2, h3, h4, h5, h6 {
                 font-weight: 700;
                 letter-spacing: -0.5px;
+                line-height: 1.2;
             }
-
-            /* --- TITLE --- */
+            
             h1 {
                 text-align: center;
-                font-size: 3.5rem;
+                font-size: clamp(2.5rem, 5vw, 3.5rem);
                 font-weight: 800;
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
                 background-clip: text;
                 padding-bottom: 1.5rem;
-                margin-bottom: 3rem;
+                margin-bottom: 2.5rem;
                 position: relative;
             }
             
@@ -171,24 +181,38 @@ def load_custom_ui():
                 bottom: 0;
                 left: 50%;
                 transform: translateX(-50%);
-                width: 150px;
+                width: 120px;
                 height: 4px;
                 background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
                 border-radius: 2px;
             }
-
+            
+            h2 {
+                font-size: 1.75rem;
+                margin-top: 2rem;
+                margin-bottom: 1.5rem;
+                color: #FAFAFA;
+            }
+            
+            h3 {
+                font-size: 1.5rem;
+                margin-top: 1.5rem;
+                margin-bottom: 1rem;
+                color: #FAFAFA;
+            }
+            
             /* --- BUTTONS --- */
             .stButton > button {
                 border-radius: 12px;
-                padding: 14px 28px;
+                padding: 0.75rem 1.75rem;
                 font-weight: 600;
-                font-size: 1rem;
+                font-size: 0.95rem;
                 transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 border: none;
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                cursor: pointer;
             }
             
-            /* Primary Button */
             div[data-testid="stButton"] > button[kind="primary"] {
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 color: white;
@@ -197,15 +221,20 @@ def load_custom_ui():
             
             div[data-testid="stButton"] > button[kind="primary"]:hover {
                 transform: translateY(-2px);
-                box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+                box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
                 background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
             }
             
-            /* Secondary Button */
+            div[data-testid="stButton"] > button[kind="primary"]:active {
+                transform: translateY(0);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            }
+            
             div[data-testid="stButton"] > button[kind="secondary"] {
                 background: rgba(102, 126, 234, 0.1);
                 color: #667eea;
                 border: 2px solid rgba(102, 126, 234, 0.3);
+                backdrop-filter: blur(10px);
             }
             
             div[data-testid="stButton"] > button[kind="secondary"]:hover {
@@ -213,6 +242,12 @@ def load_custom_ui():
                 border-color: #667eea;
                 transform: translateY(-2px);
                 box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            }
+            
+            div[data-testid="stButton"] > button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                transform: none !important;
             }
 
             /* --- FILE UPLOADER --- */
@@ -222,16 +257,18 @@ def load_custom_ui():
                 border-radius: 20px;
                 padding: 2.5rem;
                 transition: all 0.3s ease;
+                backdrop-filter: blur(10px);
             }
             
             div[data-testid="stFileUploader"]:hover {
                 border-color: rgba(102, 126, 234, 0.8);
                 background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
                 transform: translateY(-2px);
+                box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
             }
             
             div[data-testid="stFileUploader"] label {
-                font-size: 1.2rem;
+                font-size: 1.1rem;
                 font-weight: 700;
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 -webkit-background-clip: text;
@@ -241,37 +278,56 @@ def load_custom_ui():
 
             /* --- SIDEBAR --- */
             div[data-testid="stSidebar"] > div:first-child {
-                background: linear-gradient(180deg, rgba(15, 12, 41, 0.95) 0%, rgba(26, 26, 46, 0.95) 100%);
-                backdrop-filter: blur(10px);
+                background: linear-gradient(180deg, rgba(15, 12, 41, 0.98) 0%, rgba(26, 26, 46, 0.98) 100%);
+                backdrop-filter: blur(20px);
                 border-right: 2px solid rgba(102, 126, 234, 0.2);
             }
+            
+            div[data-testid="stSidebar"] h3 {
+                color: #FAFAFA;
+                font-size: 1.25rem;
+                margin-top: 1rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            div[data-testid="stSidebar"] .stMarkdown p {
+                color: rgba(250, 250, 250, 0.9);
+                margin-bottom: 0.5rem;
+            }
+            
+            div[data-testid="stSidebar"] .stCaption {
+                color: rgba(250, 250, 250, 0.7);
+                font-size: 0.85rem;
+            }
 
-            /* --- Expander in Sidebar --- */
+            /* --- EXPANDERS --- */
             div[data-testid="stSidebar"] div[data-testid="stExpander"] {
                 border: 2px solid rgba(102, 126, 234, 0.2);
                 border-radius: 16px;
                 background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-                margin-bottom: 1.5rem;
+                margin-bottom: 1.25rem;
                 transition: all 0.3s ease;
+                backdrop-filter: blur(10px);
             }
             
             div[data-testid="stSidebar"] div[data-testid="stExpander"]:hover {
                 border-color: rgba(102, 126, 234, 0.5);
                 transform: translateX(4px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
             }
             
             div[data-testid="stSidebar"] div[data-testid="stExpander"] summary {
                 font-weight: 700;
                 color: #FAFAFA;
-                padding: 0.5rem;
+                padding: 0.75rem 1rem;
+                font-size: 0.95rem;
             }
 
-            /* --- Expander in Main Content (File Previews) --- */
             .main div[data-testid="stExpander"] {
                 border: 2px solid rgba(102, 126, 234, 0.3);
                 border-radius: 20px;
-                background: linear-gradient(135deg, rgba(15, 12, 41, 0.6) 0%, rgba(26, 26, 46, 0.6) 100%);
-                backdrop-filter: blur(10px);
+                background: linear-gradient(135deg, rgba(15, 12, 41, 0.7) 0%, rgba(26, 26, 46, 0.7) 100%);
+                backdrop-filter: blur(15px);
                 margin-bottom: 2rem;
                 box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
                 transition: all 0.3s ease;
@@ -280,60 +336,60 @@ def load_custom_ui():
             .main div[data-testid="stExpander"]:hover {
                 border-color: rgba(102, 126, 234, 0.6);
                 transform: translateY(-4px);
-                box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
+                box-shadow: 0 12px 32px rgba(102, 126, 234, 0.25);
             }
             
             .main div[data-testid="stExpander"] summary {
                 font-weight: 700;
                 font-size: 1.1rem;
                 color: #FAFAFA;
-                padding: 1rem;
+                padding: 1.25rem;
             }
             
             .main div[data-testid="stExpander"] div[data-testid="stExpanderDetails"] {
-                padding-top: 1.5rem;
+                padding: 1.5rem;
             }
 
-
-            /* --- BORDERED CONTAINERS / CARDS for individual items --- */
+            /* --- CARDS / CONTAINERS --- */
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div {
-                background: linear-gradient(135deg, rgba(15, 12, 41, 0.7) 0%, rgba(26, 26, 46, 0.7) 100%);
-                backdrop-filter: blur(15px);
+                background: linear-gradient(135deg, rgba(15, 12, 41, 0.75) 0%, rgba(26, 26, 46, 0.75) 100%);
+                backdrop-filter: blur(20px);
                 border-radius: 24px;
                 box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
                 border: 2px solid rgba(102, 126, 234, 0.3);
-                padding: 2.5rem;
-                margin-bottom: 2.5rem;
-                transition: all 0.3s ease;
+                padding: 2rem 2.5rem;
+                margin-bottom: 2rem;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
             
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div:hover {
                 border-color: rgba(102, 126, 234, 0.6);
-                transform: translateY(-6px);
-                box-shadow: 0 16px 48px rgba(102, 126, 234, 0.25);
+                transform: translateY(-4px);
+                box-shadow: 0 16px 48px rgba(102, 126, 234, 0.3);
             }
 
-            /* --- Form Elements Spacing within Cards --- */
+            /* --- FORM ELEMENTS --- */
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stTextInput,
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stTextArea,
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stSelectbox,
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stDateInput,
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div .stCheckbox {
-                margin-bottom: 1rem; /* Consistent bottom margin for form elements */
+                margin-bottom: 1.25rem;
             }
 
-            /* --- Labels for Form Elements --- */
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div label {
-                margin-bottom: 0.3rem; /* Space between label and input */
-                display: inline-block; /* Allows margin-bottom to work as expected */
-                font-weight: 500; /* Slightly less bold than headers */
+                margin-bottom: 0.5rem;
+                display: inline-block;
+                font-weight: 600;
+                color: rgba(250, 250, 250, 0.95);
+                font-size: 0.95rem;
             }
 
-            /* --- Text Input & Text Area --- */
+            /* --- TEXT INPUTS & TEXTAREAS --- */
             .stTextInput input, .stTextArea textarea {
                 border-radius: 12px !important;
                 border: 2px solid rgba(102, 126, 234, 0.3) !important;
-                background: rgba(15, 12, 41, 0.6) !important;
+                background: rgba(15, 12, 41, 0.7) !important;
                 color: #FAFAFA !important;
                 padding: 0.75rem 1rem !important;
                 font-size: 1rem !important;
@@ -342,57 +398,70 @@ def load_custom_ui():
             
             .stTextInput input:focus, .stTextArea textarea:focus {
                 border-color: #667eea !important;
-                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2) !important;
-                background: rgba(15, 12, 41, 0.8) !important;
+                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.25) !important;
+                background: rgba(15, 12, 41, 0.9) !important;
                 transform: translateY(-2px) !important;
+                outline: none !important;
+            }
+            
+            .stTextInput input::placeholder, .stTextArea textarea::placeholder {
+                color: rgba(250, 250, 250, 0.5) !important;
             }
 
-            /* --- Selectbox --- */
+            /* --- SELECTBOX --- */
             .stSelectbox > div[data-baseweb="select"] > div {
                 border-radius: 12px !important;
                 border: 2px solid rgba(102, 126, 234, 0.3) !important;
-                background: rgba(15, 12, 41, 0.6) !important;
+                background: rgba(15, 12, 41, 0.7) !important;
                 padding: 0.5rem !important;
                 transition: all 0.3s ease !important;
             }
             
             .stSelectbox > div[data-baseweb="select"] > div:focus-within {
                 border-color: #667eea !important;
-                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2) !important;
-                background: rgba(15, 12, 41, 0.8) !important;
+                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.25) !important;
+                background: rgba(15, 12, 41, 0.9) !important;
                 transform: translateY(-2px) !important;
             }
+            
+            .stSelectbox > div[data-baseweb="select"] > div > div {
+                color: #FAFAFA !important;
+            }
 
-            /* --- Date Input --- */
+            /* --- DATE INPUT --- */
             .stDateInput input {
                 border-radius: 12px !important;
                 border: 2px solid rgba(102, 126, 234, 0.3) !important;
-                background: rgba(15, 12, 41, 0.6) !important;
+                background: rgba(15, 12, 41, 0.7) !important;
+                color: #FAFAFA !important;
                 padding: 0.75rem 1rem !important;
                 transition: all 0.3s ease !important;
             }
             
             .stDateInput input:focus {
                 border-color: #667eea !important;
-                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2) !important;
-                background: rgba(15, 12, 41, 0.8) !important;
+                box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.25) !important;
+                background: rgba(15, 12, 41, 0.9) !important;
                 transform: translateY(-2px) !important;
+                outline: none !important;
             }
 
-            /* --- Checkbox --- */
+            /* --- CHECKBOX --- */
             .stCheckbox label {
                 font-size: 1rem;
                 font-weight: 500;
                 padding-top: 0.25rem;
+                color: rgba(250, 250, 250, 0.95);
             }
             
             .stCheckbox input[type="checkbox"] {
                 width: 20px;
                 height: 20px;
                 accent-color: #667eea;
+                cursor: pointer;
             }
 
-            /* Style for st.video to make it fit container width */
+            /* --- MEDIA ELEMENTS --- */
             .stVideo {
                 width: 100%;
                 margin-bottom: 1rem;
@@ -405,21 +474,97 @@ def load_custom_ui():
                 border: 2px solid rgba(102, 126, 234, 0.2);
             }
             
-            /* Image styling */
             .main img {
                 border-radius: 16px;
                 box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
                 border: 2px solid rgba(102, 126, 234, 0.2);
+                transition: transform 0.3s ease;
+            }
+            
+            .main img:hover {
+                transform: scale(1.02);
             }
 
-            /* Specific Spacing for Two-Column Date Inputs */
+            /* --- MESSAGES (ERROR, INFO, SUCCESS, WARNING) --- */
+            .stAlert {
+                border-radius: 12px;
+                padding: 1rem 1.25rem;
+                margin-bottom: 1.5rem;
+                border: 2px solid;
+                backdrop-filter: blur(10px);
+            }
+            
+            div[data-baseweb="notification"] {
+                border-radius: 12px;
+                backdrop-filter: blur(10px);
+            }
+            
+            .element-container .stAlert {
+                border-radius: 12px;
+            }
+
+            /* --- SPACING FOR HORIZONTAL LAYOUTS --- */
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div [data-testid="stHorizontalBlock"] .stDateInput {
-                 margin-bottom: 0; /* Remove bottom margin if they are side-by-side */
+                margin-bottom: 0;
             }
+            
             div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div [data-testid="stHorizontalBlock"] {
-                 margin-bottom: 1rem; /* Ensure the row of date pickers has overall margin */
+                margin-bottom: 1.25rem;
+                gap: 1rem;
             }
 
+            /* --- SCROLLBAR STYLING --- */
+            ::-webkit-scrollbar {
+                width: 10px;
+                height: 10px;
+            }
+            
+            ::-webkit-scrollbar-track {
+                background: rgba(15, 12, 41, 0.5);
+                border-radius: 10px;
+            }
+            
+            ::-webkit-scrollbar-thumb {
+                background: rgba(102, 126, 234, 0.5);
+                border-radius: 10px;
+            }
+            
+            ::-webkit-scrollbar-thumb:hover {
+                background: rgba(102, 126, 234, 0.7);
+            }
+
+            /* --- RESPONSIVE DESIGN --- */
+            @media (max-width: 768px) {
+                .main .block-container {
+                    padding-top: 1.5rem;
+                    padding-bottom: 2rem;
+                }
+                
+                h1 {
+                    font-size: 2rem;
+                    margin-bottom: 2rem;
+                }
+                
+                div[data-testid="stVerticalBlock"] div[data-testid="stVerticalBlock"] [data-testid="stVerticalBlockBorderWrapper"] > div {
+                    padding: 1.5rem;
+                }
+            }
+
+            /* --- SMOOTH SCROLLING --- */
+            html {
+                scroll-behavior: smooth;
+            }
+
+            /* --- SELECTION COLOR --- */
+            ::selection {
+                background: rgba(102, 126, 234, 0.3);
+                color: #FAFAFA;
+            }
+            
+            ::-moz-selection {
+                background: rgba(102, 126, 234, 0.3);
+                color: #FAFAFA;
+            }
 
         </style>
     """, unsafe_allow_html=True)
@@ -808,10 +953,11 @@ def main():
     # --- Sidebar ---
     with st.sidebar:
         st.markdown("### ⚙️ Global Settings")
-        st.markdown("---")
+        st.markdown("<div style='margin-bottom: 1.5rem;'></div>", unsafe_allow_html=True)
 
         # Tone Selector
         st.markdown("**🎨 Caption Tone**")
+        st.markdown("<div style='margin-bottom: 0.5rem;'></div>", unsafe_allow_html=True)
         tone_labels_dict = {tone['value']: tone['label'] for tone in TONE_OPTIONS}
         current_global_tone = st.session_state.get('global_selected_tone', TONE_OPTIONS[0]['value'] if TONE_OPTIONS else None)
 
@@ -840,8 +986,9 @@ def main():
 
 
         # Manage Custom Stores Section
-        st.markdown("---")
+        st.markdown("<div style='margin-top: 2rem; margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
         st.markdown("**🏪 Custom Store Management**")
+        st.markdown("<div style='margin-bottom: 0.75rem;'></div>", unsafe_allow_html=True)
         
         # Show count of custom stores
         custom_store_count = len(st.session_state.get('custom_base_captions', {}))
@@ -938,12 +1085,13 @@ def main():
                             
                             st.rerun()
 
-        st.markdown("---")
-        st.markdown(f"<div style='text-align: center; padding: 1rem; color: rgba(255, 255, 255, 0.5); font-size: 0.85rem;'>✨ Caption Gen v5.0<br/>{datetime.date.today().strftime('%B %d, %Y')}</div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: center; padding: 1.5rem 1rem; color: rgba(255, 255, 255, 0.6); font-size: 0.85rem; border-top: 1px solid rgba(102, 126, 234, 0.2); margin-top: 2rem;'>✨ Caption Gen v5.0<br/><span style='opacity: 0.8;'>{datetime.date.today().strftime('%B %d, %Y')}</span></div>", unsafe_allow_html=True)
 
 
     # --- File Uploader ---
     st.markdown("### 📤 Upload Your Content")
+    st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
     uploaded_file_objects = st.file_uploader(
         "📸 Drag and drop images or videos of grocery sale ads",
         type=["png", "jpg", "jpeg", "webp", "mp4", "mov", "avi"],
@@ -1206,8 +1354,9 @@ def main():
     # --- Individual Item Details & Caption Generation ---
     if st.session_state.analyzed_image_data_set:
         if not st.session_state.is_batch_generating_captions and st.session_state.uploaded_files_info :
-            st.markdown("---")
+            st.markdown("<div style='margin-top: 2rem; margin-bottom: 1.5rem;'></div>", unsafe_allow_html=True)
             st.markdown("## 📝 File Details & Caption Generation")
+            st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
 
             # --- Select/Deselect All Buttons ---
             action_cols = st.columns(8)
@@ -1362,7 +1511,7 @@ def main():
                     st.text_area("Generated Caption:", value=caption_text_to_display, height=200, key=caption_display_key, help="Review and copy below.")
                     text_area_id = f"copytext_{item_key_prefix}_ind"; feedback_span_id = f"copyfeedback_{item_key_prefix}_ind"
                     escaped_caption_for_html = html_escaper.escape(caption_text_to_display)
-                    copy_button_html_content = f"""<textarea id="{text_area_id}" style="opacity:0.01; height:1px; width:1px; position:absolute; z-index: -1; pointer-events:none;" readonly>{escaped_caption_for_html}</textarea><button onclick="copyToClipboard('{text_area_id}', '{feedback_span_id}')" style="padding: 0.25rem 0.75rem; margin-top: 5px; border-radius: 8px; border: 1px solid #4A4D56; background-color: #262730; color: #FAFAFA; cursor:pointer;">Copy Caption</button><span id="{feedback_span_id}" style="margin-left: 10px; font-size: 0.9em;"></span><script>if(typeof window.copyToClipboard !== 'function'){{window.copyToClipboard=function(elementId,feedbackId){{var copyText=document.getElementById(elementId);var feedbackSpan=document.getElementById(feedbackId);if(!copyText||!feedbackSpan){{if(feedbackSpan)feedbackSpan.innerText="Error: Elements missing.";return;}}copyText.style.display='block';copyText.select();copyText.setSelectionRange(0,99999);copyText.style.display='none';var msg="";try{{var successful=document.execCommand('copy');msg=successful?'Copied!':'Copy failed.';}}catch(err){{msg='Oops, unable to copy.';}}feedbackSpan.innerText=msg;setTimeout(function(){{feedbackSpan.innerText='';}},2500);}}}}</script>"""
+                    copy_button_html_content = f"""<textarea id="{text_area_id}" style="opacity:0.01; height:1px; width:1px; position:absolute; z-index: -1; pointer-events:none;" readonly>{escaped_caption_for_html}</textarea><button onclick="copyToClipboard('{text_area_id}', '{feedback_span_id}')" style="padding: 0.5rem 1.25rem; margin-top: 8px; border-radius: 10px; border: 2px solid rgba(102, 126, 234, 0.4); background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%); color: #667eea; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-size: 0.95rem;">📋 Copy Caption</button><span id="{feedback_span_id}" style="margin-left: 12px; font-size: 0.9em; color: rgba(102, 126, 234, 0.9); font-weight: 500;"></span><script>if(typeof window.copyToClipboard !== 'function'){{window.copyToClipboard=function(elementId,feedbackId){{var copyText=document.getElementById(elementId);var feedbackSpan=document.getElementById(feedbackId);var button=event.target;if(!copyText||!feedbackSpan){{if(feedbackSpan)feedbackSpan.innerText="Error: Elements missing.";return;}}copyText.style.display='block';copyText.select();copyText.setSelectionRange(0,99999);copyText.style.display='none';var msg="";try{{var successful=document.execCommand('copy');msg=successful?'✓ Copied!':'Copy failed.';if(successful){{button.style.background='linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%)';button.style.borderColor='#667eea';setTimeout(function(){{button.style.background='linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)';button.style.borderColor='rgba(102, 126, 234, 0.4)';}},500);}}}}catch(err){{msg='Oops, unable to copy.';}}feedbackSpan.innerText=msg;setTimeout(function(){{feedbackSpan.innerText='';}},2500);}}}}</script>"""
                     st_html_component(copy_button_html_content, height=45)
             st.markdown("---")
 
@@ -1372,10 +1521,36 @@ def main():
     else:
         if not st.session_state.is_analyzing_images and not st.session_state.uploaded_files_info:
             st.markdown("""
-                <div style='text-align: center; padding: 4rem 2rem; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%); border-radius: 24px; border: 2px dashed rgba(102, 126, 234, 0.3);'>
-                    <h2 style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1rem;'>👋 Welcome!</h2>
-                    <p style='font-size: 1.2rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 1rem;'>Get started by uploading images or videos of grocery sale ads</p>
-                    <p style='color: rgba(255, 255, 255, 0.6);'>Or add a new store definition via the sidebar ⚙️</p>
+                <div style='
+                    text-align: center; 
+                    padding: 5rem 3rem; 
+                    background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%); 
+                    border-radius: 24px; 
+                    border: 2px dashed rgba(102, 126, 234, 0.4);
+                    backdrop-filter: blur(10px);
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+                    margin: 3rem 0;
+                '>
+                    <h2 style='
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                        -webkit-background-clip: text; 
+                        -webkit-text-fill-color: transparent; 
+                        background-clip: text;
+                        margin-bottom: 1.5rem;
+                        font-size: 2.5rem;
+                        font-weight: 800;
+                    '>👋 Welcome!</h2>
+                    <p style='
+                        font-size: 1.25rem; 
+                        color: rgba(255, 255, 255, 0.9); 
+                        margin-bottom: 1rem;
+                        font-weight: 500;
+                    '>Get started by uploading images or videos of grocery sale ads</p>
+                    <p style='
+                        color: rgba(255, 255, 255, 0.7); 
+                        font-size: 1rem;
+                        margin-top: 0.5rem;
+                    '>Or add a new store definition via the sidebar ⚙️</p>
                 </div>
             """, unsafe_allow_html=True)
 
