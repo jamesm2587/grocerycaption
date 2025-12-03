@@ -1,7 +1,6 @@
 # app.py
 import streamlit as st
 import datetime
-import io
 import re
 from streamlit.components.v1 import html as st_html_component
 import html as html_escaper
@@ -10,8 +9,6 @@ import json
 import os
 import tempfile
 import cv2
-# Ensure numpy is imported if you use it directly, though cv2 uses it internally
-# import numpy as np
 
 # Local imports
 from config import VISION_MODEL, TEXT_MODEL
@@ -1481,7 +1478,6 @@ def exec_single_item_generation(index):
                 cleaned_text = generated_text.replace('*', '')
                 
                 # Add timestamp for debugging
-                import datetime
                 timestamp = datetime.datetime.now().strftime("%H:%M:%S")
                 cleaned_text = f"[Generated at {timestamp}] {cleaned_text}"
                 
