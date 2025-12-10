@@ -1644,6 +1644,14 @@ def exec_single_item_generation(index):
 
             prompt_list.extend([f"- Store's main name ({caption_structure['name'].split('(')[0].strip()}) should be prominent if location \"{caption_structure['location']}\" is just a city/area.", "- Good formatting with line breaks."])
 
+            # Include website if specified
+            if caption_structure.get('website'):
+                website_text = caption_structure['website']
+                if caption_structure['language'] == 'spanish':
+                    prompt_list.append(f"- IMPORTANT: Always include the website link. Add a line like 'Descubre todas las ofertas en 👉 {website_text}' or similar phrasing in Spanish that naturally directs readers to visit {website_text}.")
+                else:
+                    prompt_list.append(f"- IMPORTANT: Always include the website link. Add a line like 'Discover all offers at 👉 {website_text}' or similar phrasing that naturally directs readers to visit {website_text}.")
+
             if is_sale_based_post and caption_structure.get('durationTextPattern') and "MISSING" not in display_dates and "INVALID" not in display_dates:
                 prompt_list.append(f"- Naturally integrate promotional phrase \"{caption_structure['durationTextPattern']}\" with sale dates {display_dates} if it makes sense.")
 

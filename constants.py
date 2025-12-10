@@ -84,6 +84,7 @@ INITIAL_BASE_CAPTIONS = {
             'dateFormat': "MM/DD - MM/DD",
             'durationTextPattern': "Ofertas válidas",
             'location': "Mi Rancho Supermarket, California",
+            'website': "miranchosupermarket.com",
             'baseHashtags': "#MiRanchoSupermarket #OfertasDeLaSemana #AhorraMás #CaliforniaMarkets"
         }
     }
