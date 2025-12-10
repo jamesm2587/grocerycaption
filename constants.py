@@ -72,6 +72,20 @@ INITIAL_BASE_CAPTIONS = {
             'location': "RRanch Market",
             'baseHashtags': "#RRanchMarket #OfertasSemanales #weeklydeals #grocerydeals #groceryspecials #carniceria"
         }
+    },
+    'MI_RANCHO_SUPERMARKET': {
+        'WEEKLY_OFFERS': {
+            'id': 'mirancho_weekly',
+            'name': "Mi Rancho Supermarket (Ofertas de la Semana)",
+            'language': "spanish",
+            'original_example': "🍖 Trocitos de Puerco $1.99 x lb.\nOfertas válidas 12/03 - 12/09 🗓️\n🕖 Horario: 7 AM – 9 PM\nDescubre todas las ofertas en 👉 miranchosupermarket.com\n#MiRanchoSupermarket #OfertasDeLaSemana #AhorraMás #CaliforniaMarkets",
+            'defaultProduct': "Trocitos de Puerco",
+            'defaultPrice': "$1.99 x lb.",
+            'dateFormat': "MM/DD - MM/DD",
+            'durationTextPattern': "Ofertas válidas",
+            'location': "Mi Rancho Supermarket, California",
+            'baseHashtags': "#MiRanchoSupermarket #OfertasDeLaSemana #AhorraMás #CaliforniaMarkets"
+        }
     }
 }
 TONE_OPTIONS = [{'value': "Simple", 'label': "Simple & Clear"}, {'value': "Fun", 'label': "Fun & Engaging"}, {'value': "Excited", 'label': "Excited & Urgent"}, {'value': "Professional", 'label': "Professional & Direct"}, {'value': "Friendly", 'label': "Friendly & Warm"}, {'value': "Informative", 'label': "Informative & Detailed"}, {'value': "Humorous", 'label': "Humorous & Witty"}, {'value': "Seasonal", 'label': "Seasonal / Festive"}, {'value': "Elegant", 'label': "Elegant & Refined"}, {'value': "Bold", 'label': "Bold & Punchy"}, {'value': "Nostalgic", 'label': "Nostalgic & Heartfelt"}]
