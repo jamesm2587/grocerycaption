@@ -1450,14 +1450,14 @@ def main():
                         with date_c1:
                             try: s_dt_val = datetime.datetime.strptime(data_item['dateRange']['start'], "%Y-%m-%d").date()
                             except: s_dt_val = datetime.date.today()
-                            new_s_dt = st.date_input("Start Date", value=s_dt_val, key=f"{item_key_prefix}_sdate_ind")
+                            new_s_dt = st.date_input("Start Date", value=s_dt_val, key=f"{item_key_prefix}_sdate_ind", max_value=datetime.date.today() + datetime.timedelta(days=365*5))
                             if new_s_dt.strftime("%Y-%m-%d") != data_item['dateRange']['start']:
                                 data_item['dateRange']['start'] = new_s_dt.strftime("%Y-%m-%d"); st.rerun()
                         with date_c2:
                             try: e_dt_val = datetime.datetime.strptime(data_item['dateRange']['end'], "%Y-%m-%d").date()
                             except: e_dt_val = datetime.date.today() + datetime.timedelta(days=6)
                             current_start_date_for_end_picker = datetime.datetime.strptime(data_item['dateRange']['start'], "%Y-%m-%d").date()
-                            new_e_dt = st.date_input("End Date", value=e_dt_val, key=f"{item_key_prefix}_edate_ind", min_value=current_start_date_for_end_picker)
+                            new_e_dt = st.date_input("End Date", value=e_dt_val, key=f"{item_key_prefix}_edate_ind", min_value=current_start_date_for_end_picker, max_value=datetime.date.today() + datetime.timedelta(days=365*5))
                             if new_e_dt.strftime("%Y-%m-%d") != data_item['dateRange']['end']:
                                 data_item['dateRange']['end'] = new_e_dt.strftime("%Y-%m-%d"); st.rerun()
 
